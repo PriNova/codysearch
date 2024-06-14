@@ -1,62 +1,83 @@
-import * as vscode from 'vscode';
-import * as https from 'https';
-import * as tmp from 'tmp';
-import * as fs from 'fs';
+import * as vscode from 'vscode'
+import * as https from 'https'
+import tmp from 'tmp'
+import * as fs from 'fs'
 
 /**
- * Performs a web search using the Jina AI search API and displays the result in a Cody AI mention.
+ * Performs a web search using the Jina AI search engine and displays the results in a Cody AI mention.
  *
- * This function prompts the user to enter a search query, encodes the query, makes an HTTPS GET request to the Jina AI search API, and then appends a summary of the query and result to a temporary file. The temporary file is then opened in a Cody AI mention.
+ * This function prompts the user to enter a search query, then makes an HTTPS GET request to the Jina AI search engine with the encoded query. The response data is then passed to the `appendToChat` function, which creates a temporary file with the query and result, and opens the file in a Cody AI mention.
  *
- * @param {string} query - The search query entered by the user.
- * @returns {Promise<void>} - A Promise that resolves when the search result has been displayed in a Cody AI mention.
+ * @returns {Promise<void>} A Promise that resolves when the search is complete or an error occurs.
  */
-export async function webSearch() {
+export async function webSearch(): Promise<void> {
+  // Get the extension ID.
+  const extensionID = 'sourcegraph.cody-ai'
 
-    // Get the extension ID.
-    const extensionID = 'sourcegraph.cody-ai';
+  // Get the extension.
+  const extension = vscode.extensions.getExtension(extensionID)
 
-    // Get the extension.
-    const extension = vscode.extensions.getExtension(extensionID);
+  // If the extension is not installed, return.
+  if (!extension) {
+    // Show a warning to the user that the extension is not active or installed
+    vscode.window.showWarningMessage('Cody AI extension is not active or installed')
+    return
+  }
 
-    // If the extension is not installed, return.
-    if (!extension) {
-        // Show a warning to the user that the extension is not active or installed
-        vscode.window.showWarningMessage('Cody AI extension is not active or installed');
-        return;
-    }
+  // Prompt the user to input a search query
+  vscode.window
+    .showInputBox({
+      prompt: 'Enter your web search query',
+      placeHolder: 'Type your search query here'
+    })
+    .then(query => {
+      // If the user cancels the input, return.
+      if (!query) {
+        return
+      }
+      const encodedQuery = encodeURIComponent(query)
+      const url = `https://s.jina.ai/${encodedQuery}`
 
-    // Prompt the user to input a search query
-    vscode.window.showInputBox({
-        prompt: 'Enter your web search query',
-        placeHolder: 'Type your search query here',
-    }).then(query => {
+      // Create a status bar item for the progress indicator
+      const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
+      statusBarItem.text = 'Searching... 0%'
+      statusBarItem.show()
 
-        // If the user cancels the input, return.
-        if (!query) {
-            return;
-        }
-        const encodedQuery = encodeURIComponent(query);
+      // Update the progress every second
+      let progress = 0
+      const progressInterval = setInterval(() => {
+        progress += 10
+        statusBarItem.text = `Searching... ${progress}%`
+      }, 1000)
 
-        // Make a https GET request to the provided address and wait for the content
-        const url = `https://s.jina.ai/${encodedQuery}`;
+      https
+        .get(url, response => {
+          let data = ''
+          response.setEncoding('utf8')
 
-        https.get(url, (response) => {
-            let data = '';
-            response.setEncoding('utf8');
+          response.on('data', chunk => {
+            data += chunk
+          })
 
-            response.on('data', (chunk) => {
-                data += chunk;
-            });
+          response.on('end', () => {
+            // Clear the progress interval and hide the status bar item
+            clearInterval(progressInterval)
+            statusBarItem.hide()
+            statusBarItem.dispose()
 
-            response.on('end', () => {
-                // Show the data in a new webview
-                appendToChat(query, data);
-            });
-        }).on('error', (e) => {
-            vscode.window.showErrorMessage('An error occurred while making the HTTP request.');
-        });
-    });
+            // Show the data in a new webview
+            appendToChat(query, data)
+          })
+        })
+        .on('error', () => {
+          // Clear the progress interval and hide the status bar item
+          clearInterval(progressInterval)
+          statusBarItem.hide()
+          statusBarItem.dispose()
+
+          vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
+        })
+    })
 }
 
 /**
@@ -66,24 +87,21 @@ export async function webSearch() {
  * @param message - The result of the web search.
  */
 async function appendToChat(query: string, message: string) {
+  // create a temporary in-memory file with the content of 'message' in the project root directory to be called with the vscode.URL for the 'cody.mention.file' command
+  const content = `Your goal is to summarize the result based on the users query.\nThis is the users query:${query}\n\nThis is the result of the query:${message}`
+  try {
+    //const path = vscode.Uri.file('/tmp');
+    //const file = vscode.Uri.joinPath(path, 'query.txt');
 
-    // create a temporary in-memory file with the content of 'message' in the project root directory to be called with the vscode.URL for the 'cody.mention.file' command
-    const content = `Your goal is to summarize the result based on the users query.\nThis is the users query:${query}\n\nThis is the result of the query:${message}`;
-    try {
-        const path = vscode.Uri.file('/tmp');
-        const file = vscode.Uri.joinPath(path, 'query.txt');
+    const tmpFile = tmp.fileSync({ postfix: '.txt' })
+    const tmpFileUri = vscode.Uri.file(tmpFile.name)
 
-        const tmpFile = tmp.fileSync({ postfix: '.txt' });
-        const tmpFileUri = vscode.Uri.file(tmpFile.name);
+    fs.writeFileSync(tmpFile.name, content)
+    await vscode.commands.executeCommand('cody.mention.file', tmpFileUri)
 
-        fs.writeFileSync(tmpFile.name, content);
-        await vscode.commands.executeCommand('cody.mention.file', tmpFileUri);
-
-        // Cleanup the temporary file
-        tmpFile.removeCallback();
-    }
-    catch (err) {
-        console.error(err);
-    }
-
+    // Cleanup the temporary file
+    tmpFile.removeCallback()
+  } catch (err) {
+    console.error(err)
+  }
 }

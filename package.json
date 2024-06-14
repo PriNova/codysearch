@@ -1,13 +1,21 @@
 {
-    "name": "codyarchitect",
-    "displayName": "CodyArchitect",
-    "description": "A VS Code extension to enhance the developer experience.",
+    "name": "cody-architect",
+    "displayName": "Cody Architect",
+    "description": "A VS Code extension to enhance the developer experience along Cody AI",
+    "publisher": "PriNova",
+    "license": "MIT",
+    "homepage": "https://github.com/PriNova/codysearch",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/PriNova/codysearch"
+    },
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.89.0"
     },
     "categories": [
-        "Other"
+        "AI",
+        "Extension Packs"
     ],
     "activationEvents": [],
     "contributes": {
@@ -20,24 +28,43 @@
         ],
         "commands": [
             {
-                "command": "codyarchitect.helloWorld",
-                "title": "Hello World from CodyArchitect"
+                "command": "codyarchitect.websearch",
+                "title": "Cody-Architect: Search the web"
             }
         ]
     },
     "main": "./out/extension.js",
     "scripts": {
+        "vscode:package": "npm run package && npm vsce package --no-dependencies",
         "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./"
+        "compile": "npm run check-types && npm run lint && node esbuild.js",
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild": "node esbuild.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+        "lint": "eslint src --ext ts",
+        "fix": "eslint src --ext ts --fix",
+        "check-types": "tsc --noEmit"
     },
     "devDependencies": {
         "@types/node": "^16.18.98",
         "@types/tmp": "^0.2.6",
         "@types/vscode": "^1.90.0",
+        "@typescript-eslint/eslint-plugin": "^7.13.0",
+        "@typescript-eslint/parser": "^7.13.0",
+        "esbuild": "^0.21.5",
+        "eslint": "^8.57.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-prettier": "^5.1.3",
+        "npm-run-all": "^4.1.5",
         "typescript": "^5.4.5"
     },
+    "lint-staged": {
+        "src/**/*.{ts,tsx}": [
+            "eslint --fix",
+            "prettier --write"
+        ]
+    },
     "dependencies": {
-        
+        "tmp": "^0.2.3"
     }
 }
