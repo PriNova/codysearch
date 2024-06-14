@@ -16,6 +16,8 @@ Cody-Architect is a VSCode extension that extends [Cody](https://sourcegraph.com
 
 ## How-To:
 
+https://github.com/PriNova/codysearch/assets/31413214/76de7419-fd01-45f8-ab06-6accde2f7106
+
 1. Open a Cody chat window
 1. Press Ctrl+Shift+P (Windows/Linux) or Cmd+Shift+P (Mac) to bring up the Command Palette
 1. Search for "Cody Architect"
