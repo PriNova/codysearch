@@ -1,8 +1,9 @@
 {
     "name": "cody-architect",
     "displayName": "Cody Architect",
-    "description": "A VS Code extension to enhance the developer experience along Cody AI",
+    "description": "Enhance Cody with web search",
     "publisher": "PriNova",
+    "icon": "resources/ca.png",
     "license": "MIT",
     "homepage": "https://github.com/PriNova/codysearch",
     "repository": {
@@ -11,7 +12,7 @@
     },
     "version": "0.0.1",
     "engines": {
-        "vscode": "^1.89.0"
+        "vscode": "^1.90.0"
     },
     "categories": [
         "AI",
@@ -35,7 +36,7 @@
     },
     "main": "./out/extension.js",
     "scripts": {
-        "vscode:package": "npm run package && npm vsce package --no-dependencies",
+        "vscode:package": "npm run package && pnpm vsce package --no-dependencies -o dist/cody-architect-${npm_package_version}.vsix",
         "vscode:prepublish": "npm run compile",
         "compile": "npm run check-types && npm run lint && node esbuild.js",
         "watch": "npm-run-all -p watch:*",
@@ -43,7 +44,8 @@
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
         "lint": "eslint src --ext ts",
         "fix": "eslint src --ext ts --fix",
-        "check-types": "tsc --noEmit"
+        "check-types": "tsc --noEmit",
+        "package": "npm run check-types && npm run lint && node esbuild.js --production"
     },
     "devDependencies": {
         "@types/node": "^16.18.98",

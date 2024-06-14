@@ -93,7 +93,7 @@ async function appendToChat(query: string, message: string) {
     //const path = vscode.Uri.file('/tmp');
     //const file = vscode.Uri.joinPath(path, 'query.txt');
 
-    const tmpFile = tmp.fileSync({ postfix: '.txt' })
+    const tmpFile = tmp.fileSync({ postfix: '.txt', name: query })
     const tmpFileUri = vscode.Uri.file(tmpFile.name)
 
     fs.writeFileSync(tmpFile.name, content)
