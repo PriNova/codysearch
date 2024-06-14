@@ -10,7 +10,7 @@
         "type": "git",
         "url": "https://github.com/PriNova/codysearch"
     },
-    "version": "0.0.5",
+    "version": "0.0.6",
     "engines": {
         "vscode": "^1.90.0"
     },
@@ -34,7 +34,7 @@
             }
         ]
     },
-    "main": "./out/extension.js",
+    "main": "./dist/extension.js",
     "scripts": {
         "vscode:package": "npm run package && pnpm vsce package -o dist/cody-architect-${npm_package_version}.vsix",
         "vscode:prepublish": "npm run compile",
