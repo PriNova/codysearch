@@ -40,7 +40,7 @@ export async function webSearch(): Promise<void> {
 
       // Create a status bar item for the progress indicator
       const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
-      statusBarItem.text = 'Searching... 0%'
+      statusBarItem.text = 'Gathering the web result... 0%'
       statusBarItem.show()
 
       // Update the progress every second
