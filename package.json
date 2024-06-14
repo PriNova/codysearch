@@ -1,0 +1,32 @@
+{
+    "name": "codyarchitect",
+    "displayName": "CodyArchitect",
+    "description": "A VS Code extension to enhance the developer experience.",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.89.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [],
+    "contributes": {
+        "commands": [
+        {
+            "command": "codyarchitect.helloWorld",
+            "title": "Hello World from CodyArchitect"
+        }
+        ]
+    },
+    "main": "./out/extension.js",
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./"
+    },
+    "devDependencies": {
+        "@types/node": "^16.18.98",
+        "@types/vscode": "^1.90.0",
+        "typescript": "^5.4.5"
+    }
+}
