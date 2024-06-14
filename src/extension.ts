@@ -1,10 +1,15 @@
 import * as vscode from 'vscode';
+import { webSearch } from './features/webSearch';
 
+/**
+ * Activates the extension and registers a command to perform a web search.
+ *
+ * This function is called when the extension is activated. It registers a command that can be used to perform a web search.
+ *
+ * @param context - The extension context, which provides access to various extension-related resources.
+ */
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your extension "codyarchitect" is now active!');
-  const disposable = vscode.commands.registerCommand('codyarchitect.helloWorld', () => {
-    vscode.window.showInformationMessage('Hello World from CodyArchitect!');
-  });
+  const disposable = vscode.commands.registerCommand('codyarchitect.helloWorld', webSearch);
   context.subscriptions.push(disposable);
 }
 

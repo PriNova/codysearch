@@ -11,11 +11,18 @@
     ],
     "activationEvents": [],
     "contributes": {
+        "permissions": [
+            {
+                "fileSystem": [
+                    "write"
+                ]
+            }
+        ],
         "commands": [
-        {
-            "command": "codyarchitect.helloWorld",
-            "title": "Hello World from CodyArchitect"
-        }
+            {
+                "command": "codyarchitect.helloWorld",
+                "title": "Hello World from CodyArchitect"
+            }
         ]
     },
     "main": "./out/extension.js",
@@ -26,7 +33,11 @@
     },
     "devDependencies": {
         "@types/node": "^16.18.98",
+        "@types/tmp": "^0.2.6",
         "@types/vscode": "^1.90.0",
         "typescript": "^5.4.5"
+    },
+    "dependencies": {
+        
     }
 }
