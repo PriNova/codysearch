@@ -2,7 +2,7 @@
 
 Cody-Architect is a VSCode extension that extends [Cody](https://sourcegraph.com/cody) with Web Search capabilities.
 
-[![](https://img.shields.io/badge/Chat_with_Cody++-Ask_Cody-%238A16D7?labelColor=%23383838)](https://sourcegraph.com/github.com/PriNova/codysearch)
+[![](https://img.shields.io/badge/Cody_Architect-Ask_Cody-%238A16D7?labelColor=%23383838)](https://sourcegraph.com/github.com/PriNova/codysearch)
 [![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/PriNova75)](https://twitter.com/PriNova75)
 
 ## Requirements:
@@ -11,7 +11,7 @@ Cody-Architect is a VSCode extension that extends [Cody](https://sourcegraph.com
 
 ## Installation Instruction:
 
-- Install Cody-Architect from the Visual Studio Code Marketplace
+- Install [Cody-Architect](https://marketplace.visualstudio.com/items?itemName=PriNova.cody-architect) from the Visual Studio Code Marketplace
 - Or directly from VS Code
 
 ## How-To:

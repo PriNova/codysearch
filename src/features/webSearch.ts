@@ -39,7 +39,7 @@ export async function webSearch(): Promise<void> {
       const url = `https://s.jina.ai/${encodedQuery}`
 
       // Create a status bar item for the progress indicator
-      const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left)
+      const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
       statusBarItem.text = 'Searching... 0%'
       statusBarItem.show()
 
@@ -47,7 +47,7 @@ export async function webSearch(): Promise<void> {
       let progress = 0
       const progressInterval = setInterval(() => {
         progress += 10
-        statusBarItem.text = `Searching... ${progress}%`
+        statusBarItem.text = `Gathering the web result... ${progress}%`
       }, 1000)
 
       https
@@ -66,7 +66,7 @@ export async function webSearch(): Promise<void> {
             statusBarItem.dispose()
 
             // Show the data in a new webview
-            appendToChat(query, data)
+            displaySearchResultsInMention(query, data)
           })
         })
         .on('error', () => {
@@ -86,9 +86,9 @@ export async function webSearch(): Promise<void> {
  * @param query - The original search query entered by the user.
  * @param message - The result of the web search.
  */
-async function appendToChat(query: string, message: string) {
+async function displaySearchResultsInMention(query: string, message: string) {
   // create a temporary in-memory file with the content of 'message' in the project root directory to be called with the vscode.URL for the 'cody.mention.file' command
-  const content = `Your goal is to summarize the result based on the users query.\nThis is the users query:${query}\n\nThis is the result of the query:${message}`
+  const content = `Your goal is to summarize the result based on the users query and additional context if provided. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query:${query}\n\nThis is the result of the query:${message}`
   try {
     //const path = vscode.Uri.file('/tmp');
     //const file = vscode.Uri.joinPath(path, 'query.txt');

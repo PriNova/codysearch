@@ -9,7 +9,7 @@ import { webSearch } from './features/webSearch'
  * @param context - The extension context, which provides access to various extension-related resources.
  */
 export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand('codyarchitect.websearch', webSearch)
+  const disposable = vscode.commands.registerCommand('cody-architect.websearch', webSearch)
   context.subscriptions.push(disposable)
 }
 
