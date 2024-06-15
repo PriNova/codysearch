@@ -35,48 +35,64 @@ export async function webSearch(): Promise<void> {
       if (!query) {
         return
       }
+
+      // Encode the query
       const encodedQuery = encodeURIComponent(query)
       const url = `https://s.jina.ai/${encodedQuery}`
 
       // Create a status bar item for the progress indicator
       const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
-      statusBarItem.text = 'Gathering the web result... 0%'
+      statusBarItem.text = 'Gathering the web result... 0s'
       statusBarItem.show()
 
       // Update the progress every second
       let progress = 0
       const progressInterval = setInterval(() => {
-        progress += 10
-        statusBarItem.text = `Gathering the web result... ${progress}%`
+        progress += 1
+        statusBarItem.text = `Gathering the web result... ${progress}s`
       }, 1000)
 
-      https
-        .get(url, response => {
-          let data = ''
-          response.setEncoding('utf8')
+      // set headers for Image Caption and gather links at the end of the response
+      const options: https.RequestOptions = {
+        hostname: url,
+        method: 'GET',
+        headers: {
+          'X-With-Generated-Alt': 'true',
+          'X-With-Links-Summary': 'true'
+        }
+      }
 
-          response.on('data', chunk => {
-            data += chunk
-          })
+      // Make the HTTPS GET request
+      const clientRequest = https.get(options, response => {
+        let data = ''
+        response.setEncoding('utf8')
 
-          response.on('end', () => {
-            // Clear the progress interval and hide the status bar item
-            clearInterval(progressInterval)
-            statusBarItem.hide()
-            statusBarItem.dispose()
-
-            // Show the data in a new webview
-            displaySearchResultsInMention(query, data)
-          })
+        // Handle the response data
+        response.on('data', chunk => {
+          data += chunk
         })
-        .on('error', () => {
+
+        // Handle the response end
+        response.on('end', () => {
           // Clear the progress interval and hide the status bar item
           clearInterval(progressInterval)
           statusBarItem.hide()
           statusBarItem.dispose()
 
-          vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
+          // Display the results in a Cody AI mention
+          displaySearchResultsInMention(query, data)
         })
+      })
+
+      clientRequest.on('error', () => {
+        // Clear the progress interval and hide the status bar item
+        clearInterval(progressInterval)
+        statusBarItem.hide()
+        statusBarItem.dispose()
+
+        // Show an error message to the user
+        vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
+      })
     })
 }
 
@@ -87,15 +103,14 @@ export async function webSearch(): Promise<void> {
  * @param message - The result of the web search.
  */
 async function displaySearchResultsInMention(query: string, message: string) {
-  // create a temporary in-memory file with the content of 'message' in the project root directory to be called with the vscode.URL for the 'cody.mention.file' command
+  // Create the input prompt content for the mention
   const content = `Your goal is to summarize the result based on the users query and additional context if provided. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query:${query}\n\nThis is the result of the query:${message}`
   try {
-    //const path = vscode.Uri.file('/tmp');
-    //const file = vscode.Uri.joinPath(path, 'query.txt');
-
+    // Create a temporary file to hold the content
     const tmpFile = tmp.fileSync({ postfix: '.txt', name: query })
     const tmpFileUri = vscode.Uri.file(tmpFile.name)
 
+    // Write the content to the temporary file
     fs.writeFileSync(tmpFile.name, content)
     await vscode.commands.executeCommand('cody.mention.file', tmpFileUri)
 

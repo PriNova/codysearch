@@ -10,7 +10,7 @@
         "type": "git",
         "url": "https://github.com/PriNova/codysearch"
     },
-    "version": "0.0.7",
+    "version": "0.0.9",
     "engines": {
         "vscode": "^1.90.0"
     },
@@ -38,7 +38,7 @@
     "scripts": {
         "vscode:package": "npm run package && pnpm vsce package -o dist/cody-architect-${npm_package_version}.vsix",
         "vscode:prepublish": "npm run compile",
-        "compile": "npm run check-types && npm run lint && node esbuild.js",
+        "compile": "npm run check-types && npm run fix && node esbuild.js",
         "watch": "npm-run-all -p watch:*",
         "watch:esbuild": "node esbuild.js --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
