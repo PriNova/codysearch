@@ -10,7 +10,7 @@
         "type": "git",
         "url": "https://github.com/PriNova/codysearch"
     },
-    "version": "0.0.9",
+    "version": "0.0.10",
     "engines": {
         "vscode": "^1.90.0"
     },
@@ -31,6 +31,10 @@
             {
                 "command": "cody-architect.websearch",
                 "title": "Cody-Architect: Search the web"
+            },
+            {
+                "command": "cody-architect.pdfread",
+                "title": "Cody-Architect: Read PDF"
             }
         ]
     },

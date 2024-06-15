@@ -3,14 +3,7 @@ import * as https from 'https'
 import tmp from 'tmp'
 import * as fs from 'fs'
 
-/**
- * Performs a web search using the Jina AI search engine and displays the results in a Cody AI mention.
- *
- * This function prompts the user to enter a search query, then makes an HTTPS GET request to the Jina AI search engine with the encoded query. The response data is then passed to the `appendToChat` function, which creates a temporary file with the query and result, and opens the file in a Cody AI mention.
- *
- * @returns {Promise<void>} A Promise that resolves when the search is complete or an error occurs.
- */
-export async function webSearch(): Promise<void> {
+export async function readPDF() {
   // Get the extension ID.
   const extensionID = 'sourcegraph.cody-ai'
 
@@ -24,11 +17,11 @@ export async function webSearch(): Promise<void> {
     return
   }
 
-  // Prompt the user to input a search query
+  // Prompt the user to input a url to a PDF
   vscode.window
     .showInputBox({
-      prompt: 'Enter your web search query',
-      placeHolder: 'Type your search query here'
+      prompt: 'Enter the URL to a PDF',
+      placeHolder: 'Type the URL to a PDF here'
     })
     .then(query => {
       // If the user cancels the input, return.
@@ -36,20 +29,18 @@ export async function webSearch(): Promise<void> {
         return
       }
 
-      // Encode the query
-      const encodedQuery = encodeURIComponent(query)
-      const url = `https://s.jina.ai/${encodedQuery}`
+      const url = `https://r.jina.ai/${query}`
 
       // Create a status bar item for the progress indicator
       const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
-      statusBarItem.text = 'Gathering the web result... 0s'
+      statusBarItem.text = 'Gathering the PDF... 0s'
       statusBarItem.show()
 
       // Update the progress every second
       let progress = 0
       const progressInterval = setInterval(() => {
         progress += 1
-        statusBarItem.text = `Gathering the web result... ${progress}s`
+        statusBarItem.text = `Gathering the PDF... ${progress}s`
       }, 1000)
 
       // Set headers for Image Caption and gather links at the end of the response
@@ -79,7 +70,7 @@ export async function webSearch(): Promise<void> {
           statusBarItem.dispose()
 
           // Display the results in a Cody AI mention
-          displaySearchResultsInMention(query, data)
+          displayPDFResultInMention(query, data)
         })
       })
 
@@ -95,18 +86,12 @@ export async function webSearch(): Promise<void> {
     })
 }
 
-/**
- * Appends a summary of the web search query and result to a temporary file, and opens the file in a Cody AI mention.
- *
- * @param query - The original search query entered by the user.
- * @param message - The result of the web search.
- */
-export async function displaySearchResultsInMention(query: string, message: string) {
+export async function displayPDFResultInMention(query: string, message: string) {
   // Create the input prompt content for the mention
   const content = `Your goal is to summarize the result based on the users query and additional context if provided. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query:${query}\n\nThis is the result of the query:${message}`
   try {
     // Create a temporary file to hold the content
-    const tmpFile = tmp.fileSync({ postfix: '.txt', name: query })
+    const tmpFile = tmp.fileSync({ postfix: '.txt' })
     const tmpFileUri = vscode.Uri.file(tmpFile.name)
 
     // Write the content to the temporary file
