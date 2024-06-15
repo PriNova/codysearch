@@ -54,7 +54,6 @@ export async function webSearch(): Promise<void> {
 
       // set headers for Image Caption and gather links at the end of the response
       const options: https.RequestOptions = {
-        hostname: url,
         method: 'GET',
         headers: {
           'X-With-Generated-Alt': 'true',
@@ -63,7 +62,7 @@ export async function webSearch(): Promise<void> {
       }
 
       // Make the HTTPS GET request
-      const clientRequest = https.get(options, response => {
+      const clientRequest = https.get(options && url, response => {
         let data = ''
         response.setEncoding('utf8')
 
