@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 import * as https from 'https'
-import tmp from 'tmp'
 import * as fs from 'fs'
 
 export async function readPDF() {
@@ -88,18 +87,20 @@ export async function readPDF() {
 
 export async function displayPDFResultInMention(query: string, message: string) {
   // Create the input prompt content for the mention
-  const content = `Your goal is to summarize the result based on the users query and additional context if provided. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query:${query}\n\nThis is the result of the query:${message}`
+  const content = `Your goal is to summarize the result based on the users query and additional context if provided. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThis is the result of the query:\n\n${message}`
   try {
-    // Create a temporary file to hold the content
-    const tmpFile = tmp.fileSync({ postfix: '.txt' })
-    const tmpFileUri = vscode.Uri.file(tmpFile.name)
-
-    // Write the content to the temporary file
-    fs.writeFileSync(tmpFile.name, content)
-    await vscode.commands.executeCommand('cody.mention.file', tmpFileUri)
-
-    // Cleanup the temporary file
-    tmpFile.removeCallback()
+    const workspaceFolders = vscode.workspace.workspaceFolders
+    if (workspaceFolders) {
+      const workspaceFolder = workspaceFolders[0]
+      fs.mkdirSync(workspaceFolder.uri.fsPath + '/.codyarchitect/pdfresults', { recursive: true })
+      const urlParts: string[] = query.split('/')
+      const fileName = urlParts[urlParts.length - 1]
+      const file = vscode.Uri.file(
+        workspaceFolder.uri.fsPath + '/.codyarchitect/pdfresults/' + fileName + '.md'
+      )
+      fs.writeFileSync(file.fsPath, Buffer.from(content))
+      await vscode.commands.executeCommand('cody.mention.file', file)
+    }
   } catch (err) {
     console.error(err)
   }

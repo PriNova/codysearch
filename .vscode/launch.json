@@ -14,10 +14,9 @@
             "args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
-            "program": "${workspaceFolder}/dist/extension.js",
             "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
-                "${workspaceFolder}/distance/**/*.js"
+                "${workspaceFolder}/dist/**/*.js"
             ]
         }
     ]

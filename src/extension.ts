@@ -9,13 +9,18 @@ import { readPDF } from './features/readPDF'
  *
  * @param context - The extension context, which provides access to various extension-related resources.
  */
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+  //await startServer()
   context.subscriptions.push(
     vscode.commands.registerCommand('cody-architect.websearch', webSearch),
     vscode.commands.registerCommand('cody-architect.pdfread', readPDF)
   )
-  //const disposable = vscode.commands.registerCommand('cody-architect.websearch', webSearch)
-  //context.subscriptions.push(disposable)
 }
 
-export function deactivate() {}
+async function testCommand() {
+  vscode.workspace.workspaceFolders?.forEach(wsf => {
+    vscode.window.showInformationMessage(wsf.name)
+  })
+}
+
+export async function deactivate() {}
