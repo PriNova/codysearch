@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { webSearch } from './features/webSearch'
 import { readPDF } from './features/readPDF'
+import { outputChannel } from './outputChannel'
 
 /**
  * Activates the extension and registers a command to perform a web search.
@@ -11,6 +12,8 @@ import { readPDF } from './features/readPDF'
  */
 export async function activate(context: vscode.ExtensionContext) {
   //await startServer()
+  outputChannel.show()
+  outputChannel.appendLine('Activate: Cody Architect extension is active')
   context.subscriptions.push(
     vscode.commands.registerCommand('cody-architect.websearch', webSearch),
     vscode.commands.registerCommand('cody-architect.pdfread', readPDF)
@@ -23,4 +26,6 @@ async function testCommand() {
   })
 }
 
-export async function deactivate() {}
+export async function deactivate() {
+  outputChannel.dispose()
+}

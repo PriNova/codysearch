@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import * as https from 'https'
 import * as fs from 'fs'
+import { outputChannel } from '../outputChannel'
 
 export async function readPDF() {
   // Get the extension ID.
@@ -13,6 +14,7 @@ export async function readPDF() {
   if (!extension) {
     // Show a warning to the user that the extension is not active or installed
     vscode.window.showWarningMessage('Cody AI extension is not active or installed')
+    outputChannel.appendLine('ReadPDF: Cody AI extension is not active or installed')
     return
   }
 
@@ -28,7 +30,11 @@ export async function readPDF() {
         return
       }
 
+      outputChannel.appendLine(`ReadPDF: Gathering the PDF result for "${query}"`)
+
       const url = `https://r.jina.ai/${query}`
+
+      outputChannel.appendLine(`ReadPDF: Gathering the PDF result at "${url}"`)
 
       // Create a status bar item for the progress indicator
       const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -58,7 +64,16 @@ export async function readPDF() {
 
         // Handle the response data
         response.on('data', chunk => {
+          outputChannel.appendLine('ReadPDF: Recieving chunk: ' + chunk)
           data += chunk
+        })
+
+        response.on('error', (err: any) => {
+          // Clear the progress interval and hide the status bar item
+          outputChannel.appendLine('ReadPDF: Error with code: ' + err)
+          clearInterval(progressInterval)
+          statusBarItem.hide()
+          statusBarItem.dispose()
         })
 
         // Handle the response end
@@ -81,6 +96,7 @@ export async function readPDF() {
 
         // Show an error message to the user
         vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
+        outputChannel.appendLine('ReadPDF: An error occurred while making the HTTP request.')
       })
     })
 }
@@ -92,7 +108,14 @@ export async function displayPDFResultInMention(query: string, message: string) 
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (workspaceFolders) {
       const workspaceFolder = workspaceFolders[0]
-      fs.mkdirSync(workspaceFolder.uri.fsPath + '/.codyarchitect/pdfresults', { recursive: true })
+      const path = fs.mkdirSync(workspaceFolder.uri.fsPath + '/.codyarchitect/pdfresults', {
+        recursive: true
+      })
+      if (path) {
+        outputChannel.appendLine(
+          'ReadPDF: displayPDFResultInMention: PDF extraction results created at ' + path
+        )
+      }
       const urlParts: string[] = query.split('/')
       const fileName = urlParts[urlParts.length - 1]
       const file = vscode.Uri.file(
@@ -100,8 +123,10 @@ export async function displayPDFResultInMention(query: string, message: string) 
       )
       fs.writeFileSync(file.fsPath, Buffer.from(content))
       await vscode.commands.executeCommand('cody.mention.file', file)
+      outputChannel.appendLine('ReadPDF: displayPDFResultInMention: PDF Mention created')
     }
-  } catch (err) {
+  } catch (err: any) {
     console.error(err)
+    outputChannel.appendLine('ReadPDF: displayPDFResultInMention: ' + err)
   }
 }
