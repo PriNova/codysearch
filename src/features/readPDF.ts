@@ -101,9 +101,10 @@ export async function readPDF() {
     })
 }
 
-export async function displayPDFResultInMention(query: string, message: string) {
+export async function displayPDFResultInMention(query: string, PDF: string) {
   // Create the input prompt content for the mention
-  const content = `Your goal is to summarize the result based on the users query and additional context if provided. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThis is the result of the query:\n\n${message}`
+  const prefix = `Your goal is to provide a concise and specific answer based on the content of the provided PDF. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the result of the PDF:\n\n${PDF}`
+  const truncatedWebResult = prefix.slice(0, 80000)
   try {
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (workspaceFolders) {
@@ -121,7 +122,7 @@ export async function displayPDFResultInMention(query: string, message: string) 
       const file = vscode.Uri.file(
         workspaceFolder.uri.fsPath + '/.codyarchitect/pdfresults/' + fileName + '.md'
       )
-      fs.writeFileSync(file.fsPath, Buffer.from(content))
+      fs.writeFileSync(file.fsPath, Buffer.from(truncatedWebResult))
       await vscode.commands.executeCommand('cody.mention.file', file)
       outputChannel.appendLine('ReadPDF: displayPDFResultInMention: PDF Mention created')
     }

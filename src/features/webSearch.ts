@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 import * as https from 'https'
-import * as tmp from 'tmp'
 import * as fs from 'fs'
 import { outputChannel } from '../outputChannel'
 
@@ -62,19 +61,21 @@ export async function webSearch(): Promise<void> {
       const options: https.RequestOptions = {
         method: 'GET',
         headers: {
+          //'Content-Type': 'application/json',
+          //Accept: 'application/json',
           'X-With-Generated-Alt': 'true',
           'X-With-Links-Summary': 'true'
         }
       }
 
       // Make the HTTPS GET request
-      const clientRequest = https.get(options && url, response => {
+      const clientRequest = https.get(url, options, response => {
         let data = ''
         response.setEncoding('utf8')
 
         // Handle the response data
         response.on('data', chunk => {
-          outputChannel.appendLine('WebSearch: Recieving chunk: ' + chunk)
+          //outputChannel.appendLine('WebSearch: Recieving chunk: ' + chunk)
           data += chunk
         })
 
@@ -92,7 +93,22 @@ export async function webSearch(): Promise<void> {
           clearInterval(progressInterval)
           statusBarItem.hide()
           statusBarItem.dispose()
-
+          //console.log(data)
+          //const webResultsJson = JSON.parse(data)
+          //console.log(webResultsJson)
+          /*const extractedInfo = webResultsJson.data.map((item: any) => ({
+            title: item.title,
+            url: item.url,
+            content: item.content
+          }))
+          // Now, let's format this information into a string
+          const formattedResult = extractedInfo
+            .map(
+              (item: any) =>
+                `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}\n\n`
+            )
+            .join('')
+          */
           // Display the results in a Cody AI mention
           displaySearchResultsInMention(query, data)
         })
@@ -119,7 +135,8 @@ export async function webSearch(): Promise<void> {
  */
 export async function displaySearchResultsInMention(query: string, message: string) {
   // Create the input prompt content for the mention
-  const content = `Your goal is to summarize the result based on the users query and additional context if provided. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThis is the result of the query:\n\n${message}`
+  const prefix = `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThese are the results of the query:\n\n${message}`
+  const truncatedWebResult = prefix.slice(0, 80000)
   try {
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (workspaceFolders) {
@@ -135,7 +152,7 @@ export async function displaySearchResultsInMention(query: string, message: stri
       const file = vscode.Uri.file(
         workspaceFolder.uri.fsPath + '/.codyarchitect/webresults/' + query + '.md'
       )
-      fs.writeFileSync(file.fsPath, Buffer.from(content))
+      fs.writeFileSync(file.fsPath, Buffer.from(truncatedWebResult))
       await vscode.commands.executeCommand('cody.mention.file', file)
       outputChannel.appendLine(
         'WebSearch: displaySearchResultsInMention: Web search results created'

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { webSearch } from './features/webSearch'
 import { readPDF } from './features/readPDF'
 import { outputChannel } from './outputChannel'
+import { startServer, stopServer } from './features/server'
 
 /**
  * Activates the extension and registers a command to perform a web search.
@@ -27,5 +28,6 @@ async function testCommand() {
 }
 
 export async function deactivate() {
+  //await stopServer()
   outputChannel.dispose()
 }

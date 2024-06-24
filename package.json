@@ -1,7 +1,7 @@
 {
     "name": "cody-architect",
     "displayName": "Cody Architect",
-    "description": "Enhance Cody with web search",
+    "description": "Cody Architect- Enhance Cody with additional features",
     "publisher": "PriNova",
     "icon": "resources/ca.png",
     "license": "MIT",
@@ -10,7 +10,7 @@
         "type": "git",
         "url": "https://github.com/PriNova/codysearch"
     },
-    "version": "0.0.12",
+    "version": "0.0.13",
     "engines": {
         "vscode": "^1.90.0"
     },
@@ -45,7 +45,7 @@
     "scripts": {
         "vscode:package": "npm run package && pnpm vsce package -o dist/cody-architect-${npm_package_version}.vsix",
         "vscode:prepublish": "npm run compile",
-        "compile": "npm run check-types && npm run fix && node esbuild.js",
+        "compile": "npm run check-types && npm run lint && node esbuild.js",
         "watch": "npm-run-all -p watch:*",
         "watch:esbuild": "node esbuild.js --watch",
         "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
@@ -74,6 +74,9 @@
         ]
     },
     "dependencies": {
+        "@openctx/client": "^0.0.19",
+        "@openctx/protocol": "^0.0.15",
+        "@openctx/provider": "^0.0.14",
         "tmp": "^0.2.3"
     }
 }
