@@ -99,8 +99,7 @@ export async function startServer() {
             const webResult = await fetchWebResult(queryMessage)
             console.log('Length of the WebResult: ' + webResult.length)
             // Prefix the webResult with a custom string
-            const prefix =
-              `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${queryMessage}\n\nThese are the results of the query:\n\n${webResult}`
+            const prefix = `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${queryMessage}\n\nThese are the results of the query:\n\n${webResult}`
             //const splitResults = splitIntoFiveParts(webResult)
             // Truncate the content of the webResult to maximum 14000 characters
             const truncatedWebResult = prefix.slice(0, 30000)
@@ -169,13 +168,12 @@ function fetchWebResult(query: string): Promise<string> {
       },
       timeout: 60000
     }
-    
+
     // Make the HTTPS GET request
     let data = ''
-    const clientRequest = https.request(url, options, (response) => {
-      console.log('Response status:', response.statusCode);
-      console.log('Response headers:', response.headers);
-      
+    const clientRequest = https.request(url, options, response => {
+      console.log('Response status:', response.statusCode)
+      console.log('Response headers:', response.headers)
 
       // Handle the response data
       response.on('data', chunk => {
@@ -223,9 +221,9 @@ function fetchWebResult(query: string): Promise<string> {
               )
               .join('')
               */
-            //outputChannel.appendLine('WebSearch: Recieving end' + formattedResult)
-            //console.log(formattedResult)
-            resolve(data)
+          //outputChannel.appendLine('WebSearch: Recieving end' + formattedResult)
+          //console.log(formattedResult)
+          resolve(data)
           /*} else {
             reject('WebSearch: Error with code:' + webResultsJson.status)
           }*/
