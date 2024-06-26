@@ -61,8 +61,6 @@ export async function webSearch(): Promise<void> {
       const options: https.RequestOptions = {
         method: 'GET',
         headers: {
-          //'Content-Type': 'application/json',
-          //Accept: 'application/json',
           'X-With-Generated-Alt': 'true',
           'X-With-Links-Summary': 'true'
         }
@@ -93,22 +91,7 @@ export async function webSearch(): Promise<void> {
           clearInterval(progressInterval)
           statusBarItem.hide()
           statusBarItem.dispose()
-          //console.log(data)
-          //const webResultsJson = JSON.parse(data)
-          //console.log(webResultsJson)
-          /*const extractedInfo = webResultsJson.data.map((item: any) => ({
-            title: item.title,
-            url: item.url,
-            content: item.content
-          }))
-          // Now, let's format this information into a string
-          const formattedResult = extractedInfo
-            .map(
-              (item: any) =>
-                `Title: ${item.title}\nURL: ${item.url}\nContent: ${item.content}\n\n`
-            )
-            .join('')
-          */
+          
           // Display the results in a Cody AI mention
           displaySearchResultsInMention(query, data)
         })
@@ -134,31 +117,43 @@ export async function webSearch(): Promise<void> {
  * @param message - The result of the web search.
  */
 export async function displaySearchResultsInMention(query: string, message: string) {
-  // Create the input prompt content for the mention
+  // Create the input prompt prefix for the mention
   const prefix = `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThese are the results of the query:\n\n${message}`
+  
+  // Truncate the web result to 80,000 characters to avoid exceeding the mention limit
   const truncatedWebResult = prefix.slice(0, 80000)
+
   try {
+    // Get the workspace folders
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (workspaceFolders) {
+      // Get the first workspace folder
       const workspaceFolder = workspaceFolders[0]
+      // Create a directory for web search results
       const path = fs.mkdirSync(workspaceFolder.uri.fsPath + '/.codyarchitect/webresults', {
         recursive: true
       })
       if (path) {
+        // Log the creation of the directory
         outputChannel.appendLine(
           'WebSearch: displaySearchResultsInMention: Path for Web search results created at ' + path
         )
       }
+      // Create a file URI for the search results
       const file = vscode.Uri.file(
         workspaceFolder.uri.fsPath + '/.codyarchitect/webresults/' + query + '.md'
       )
+      // Write the truncated web result to the file
       fs.writeFileSync(file.fsPath, Buffer.from(truncatedWebResult))
+      // Execute the command to mention the file
       await vscode.commands.executeCommand('cody.mention.file', file)
+      // Log the creation of the web search results
       outputChannel.appendLine(
         'WebSearch: displaySearchResultsInMention: Web search results created'
       )
     }
   } catch (err: any) {
+    // Log any errors that occur
     console.error(err)
     outputChannel.appendLine('WebSearch: displaySearchResultsInMention: ' + err)
   }

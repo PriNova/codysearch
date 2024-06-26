@@ -22,7 +22,6 @@ const server = http.createServer()
 const docProvider: Provider & { providerUri: 'http://localhost:1234' } = {
   providerUri: 'http://localhost:1234',
   async meta(): Promise<MetaResult> {
-    //outputChannel.appendLine('Server: Provider: Meta: ')
     return {
       // empty since we don't provide any annotations.
       name: 'WebSearch',
@@ -32,7 +31,6 @@ const docProvider: Provider & { providerUri: 'http://localhost:1234' } = {
     }
   },
   async mentions({ query }): Promise<MentionsResult> {
-    //outputChannel.appendLine('Server: Mentions')
     return [
       {
         title: 'query',
@@ -42,7 +40,6 @@ const docProvider: Provider & { providerUri: 'http://localhost:1234' } = {
   },
 
   async items(params) {
-    //outputChannel.appendLine('Server: Items')
     return await fetchItem(params)
   }
 }
@@ -57,52 +54,63 @@ async function fetchItem(params: ItemsParams, timeout = 2000) {
 }
 
 export async function startServer() {
+  // Start the server and listen on port 1234
   server.listen(1234, async () => {
     outputChannel.appendLine('Server: StartServer: Server is listening on port 1234')
   })
+
+  // Handle incoming requests
   server.on('request', async (req: http.IncomingMessage, res: http.ServerResponse) => {
-    //outputChannel.appendLine('Server: StartServer: Received a request header: ' + JSON.stringify(req.headers))
-    //const provider = new OpenCtxProvider()
+    // Only process POST requests
     if (req.method === 'POST') {
       let body = ''
       req.on('data', chunk => {
         body += chunk.toString()
       })
+
+      // Process the request once all data is received
       req.on('end', async () => {
         const request = JSON.parse(body)
-        //outputChannel.appendLine('Server: StartServer: Received a request body' + JSON.stringify(request))
         let result
+
+        // Handle different request methods
         switch (request.method) {
           case 'meta':
+            // Return metadata about the WebSearch feature
             const metaResult: MetaResult = {
               name: 'WebSearch',
               mentions: {
                 label: 'Type your search query'
               }
             }
-            result = metaResult //await docProvider.meta(request.params, {})
-            //outputChannel.appendLine('Server: StartServer: Sending a meta response' + JSON.stringify(docProvider.meta({}, {})))
+            result = metaResult
             break
+
           case 'mentions':
+            // Return mention items based on the query
             const mentionItem: ItemsResult = [
               {
                 title: request.params.query,
                 ui: { hover: { text: 'WebSearch 1' } },
-                ai: { content: 'A web serch by the user' }
+                ai: { content: 'A web search by the user' }
               }
             ]
             result = mentionItem
-            //outputChannel.appendLine('Server: StartServer: Sending a mentions response' + JSON.stringify(result))
             break
+
           case 'items':
+            // Fetch web results and process them
             const queryMessage = request.params.message
             const webResult = await fetchWebResult(queryMessage)
             console.log('Length of the WebResult: ' + webResult.length)
-            // Prefix the webResult with a custom string
+
+            // Prepare the prefix for the web result
             const prefix = `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${queryMessage}\n\nThese are the results of the query:\n\n${webResult}`
-            //const splitResults = splitIntoFiveParts(webResult)
-            // Truncate the content of the webResult to maximum 14000 characters
+
+            // Truncate the content to a maximum of 30000 characters
             const truncatedWebResult = prefix.slice(0, 30000)
+
+            // Prepare the items result
             const items: ItemsResult = [
               {
                 title: `${request.params.query}`,
@@ -115,17 +123,21 @@ export async function startServer() {
             )
             result = items
             break
+
           default:
+            // Handle invalid method
             res.writeHead(400)
             res.end(JSON.stringify({ error: 'Invalid method' }))
             outputChannel.appendLine('Server: StartServer: Bad request method')
             return
         }
+
+        // Send the response
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        //outputChannel.appendLine('Server: StartServer: Sending a meta response' + JSON.stringify({result}))
         res.end(JSON.stringify({ result }))
       })
     } else {
+      // Reject non-POST requests
       res.writeHead(405)
       res.end()
     }
@@ -259,6 +271,12 @@ function fetchWebResult(query: string): Promise<string> {
   })
 }
 
+/**
+ * Splits a given text string into five equal-length parts.
+ *
+ * @param text - The input text string to be split.
+ * @returns An array of five strings, each containing an approximately equal-length part of the original text.
+ */
 function splitIntoFiveParts(text: string): string[] {
   const totalLength = text.length
   const partLength = Math.ceil(totalLength / 5)
@@ -273,6 +291,9 @@ function splitIntoFiveParts(text: string): string[] {
   return parts
 }
 
+/**
+ * Stops the server and logs a message to the output channel.
+ */
 export async function stopServer() {
   server.close(() => {
     outputChannel.appendLine('Server: StopServer: Server is closed')

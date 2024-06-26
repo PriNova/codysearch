@@ -102,13 +102,20 @@ export async function readPDF() {
 }
 
 export async function displayPDFResultInMention(query: string, PDF: string) {
-  // Create the input prompt content for the mention
+  // Create the input prompt prefix for the mention
   const prefix = `Your goal is to provide a concise and specific answer based on the content of the provided PDF. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the result of the PDF:\n\n${PDF}`
+  
+  // Truncate the prefix to 80000 characters or less
   const truncatedWebResult = prefix.slice(0, 80000)
+
   try {
+    // Get the workspace folders
     const workspaceFolders = vscode.workspace.workspaceFolders
     if (workspaceFolders) {
+      // Get the first workspace folder
       const workspaceFolder = workspaceFolders[0]
+
+      // Create a directory for PDF results
       const path = fs.mkdirSync(workspaceFolder.uri.fsPath + '/.codyarchitect/pdfresults', {
         recursive: true
       })
@@ -117,16 +124,25 @@ export async function displayPDFResultInMention(query: string, PDF: string) {
           'ReadPDF: displayPDFResultInMention: PDF extraction results created at ' + path
         )
       }
+
+      // Extract the file name from the query
       const urlParts: string[] = query.split('/')
       const fileName = urlParts[urlParts.length - 1]
+
+      // Create a file URI for the PDF result
       const file = vscode.Uri.file(
         workspaceFolder.uri.fsPath + '/.codyarchitect/pdfresults/' + fileName + '.md'
       )
+
+      // Write the truncated web result to the file
       fs.writeFileSync(file.fsPath, Buffer.from(truncatedWebResult))
+
+      // Execute the command to mention the file
       await vscode.commands.executeCommand('cody.mention.file', file)
       outputChannel.appendLine('ReadPDF: displayPDFResultInMention: PDF Mention created')
     }
   } catch (err: any) {
+    // Log any errors that occur
     console.error(err)
     outputChannel.appendLine('ReadPDF: displayPDFResultInMention: ' + err)
   }
