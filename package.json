@@ -38,7 +38,12 @@
             {
                 "command": "cody-architect.pdfread",
                 "title": "Cody-Architect: Read PDF"
+            },
+            {
+                "command": "cody-architect.openNodeEditor",
+                "title": "Cody-Architect: Open Node Editor"
             }
+              
         ]
     },
     "main": "./dist/extension.js",

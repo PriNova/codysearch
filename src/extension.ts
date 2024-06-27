@@ -3,6 +3,7 @@ import { webSearch } from './features/webSearch'
 import { readPDF } from './features/readPDF'
 import { outputChannel } from './outputChannel'
 import { startServer, stopServer } from './features/server'
+import { openNodeEditor } from './features/node-editor/nodeEditor'
 
 /**
  * Activates the extension and registers a command to perform a web search.
@@ -17,7 +18,8 @@ export async function activate(context: vscode.ExtensionContext) {
   outputChannel.appendLine('Activate: Cody Architect extension is active')
   context.subscriptions.push(
     vscode.commands.registerCommand('cody-architect.websearch', webSearch),
-    vscode.commands.registerCommand('cody-architect.pdfread', readPDF)
+    vscode.commands.registerCommand('cody-architect.pdfread', readPDF),
+    vscode.commands.registerCommand('cody-architect.openNodeEditor', () => openNodeEditor(context))
   )
 }
 
