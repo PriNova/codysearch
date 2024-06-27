@@ -28,7 +28,6 @@ My goal is to create a node-based editor in a vs code extension.
 ### State Persistence:
 
 * Serialize the entire state of the node editor (node positions, connections, frame data, etc.) to a JSON file within a specified workspace folder
-* Integrate with Git for source control, allowing users to commit and track changes to the node editor state
 
 
 ### Performance Optimizations:
