@@ -25,7 +25,7 @@ const esbuildProblemMatcherPlugin = {
 
 async function main() {
   const ctx = await esbuild.context({
-    entryPoints: ['src/extension.ts', 'src/features/node-editor/nodeEditor.tsx'],
+    entryPoints: ['src/extension.ts'],
     bundle: true,
     format: 'cjs',
     minify: production,
@@ -44,11 +44,32 @@ async function main() {
       esbuildProblemMatcherPlugin
     ]
   })
+
+  // Webview bundle
+  const webviewCtx = await esbuild.context({
+    entryPoints: ['src/features/node-editor/index.tsx'],
+    bundle: true,
+    format: 'esm',
+    minify: production,
+    sourcemap: !production,
+    sourcesContent: false,
+    platform: 'browser',
+    outdir: 'dist/webview',
+    logLevel: 'info',
+    loader: { '.ts': 'ts', '.tsx': 'tsx' },
+    define: {
+      'process.env.NODE_ENV': watch ? '"development"' : '"production"'
+    },
+    plugins: [esbuildProblemMatcherPlugin]
+  })
   if (watch) {
     await ctx.watch()
+    await webviewCtx.watch()
   } else {
     await ctx.rebuild()
+    await webviewCtx.rebuild()
     await ctx.dispose()
+    await webviewCtx.dispose()
   }
 }
 
