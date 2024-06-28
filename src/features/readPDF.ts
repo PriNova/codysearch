@@ -104,7 +104,7 @@ export async function readPDF() {
 export async function displayPDFResultInMention(query: string, PDF: string) {
   // Create the input prompt prefix for the mention
   const prefix = `Your goal is to provide a concise and specific answer based on the content of the provided PDF. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the result of the PDF:\n\n${PDF}`
-  
+
   // Truncate the prefix to 80000 characters or less
   const truncatedWebResult = prefix.slice(0, 80000)
 

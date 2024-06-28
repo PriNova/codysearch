@@ -65,6 +65,8 @@
         "@types/vscode": "^1.90.0",
         "@typescript-eslint/eslint-plugin": "^7.13.0",
         "@typescript-eslint/parser": "^7.13.0",
+        "@types/react": "^17.0.38",
+        "@types/react-dom": "^17.0.11",
         "esbuild": "^0.21.5",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
@@ -82,6 +84,8 @@
         "@openctx/client": "^0.0.19",
         "@openctx/protocol": "^0.0.15",
         "@openctx/provider": "^0.0.14",
-        "tmp": "^0.2.3"
+        "tmp": "^0.2.3",
+        "react": "^17.0.2",
+        "react-dom": "^17.0.2"
     }
 }
