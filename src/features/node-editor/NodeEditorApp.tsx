@@ -1,5 +1,9 @@
 import React from 'react';
 
+/**
+ * Renders the main Node Editor application component.
+ * This component displays the title and a brief description of the Node Editor.
+ */
 const NodeEditorApp: React.FC = () => {
   return (
     <div>
