@@ -14,7 +14,7 @@
             "args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
-            "preLaunchTask": "tsc: build - tsconfig.json",
+            "postDebugTask": "npm: watch",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ]

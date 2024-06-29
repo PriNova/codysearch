@@ -3,11 +3,23 @@
     "tasks": [
       {
         "type": "npm",
+        "script": "compile",
+        "group": "build",
+        "problemMatcher": ["$tsc"],
+        "label": "npm: compile",
+        "detail": "npm run compile"
+      },
+      {
+        "type": "npm",
         "script": "watch",
-        "problemMatcher": [],
+        "problemMatcher": ["$tsc-watch"],
+        "isBackground": true,
+        "presentation": {
+          "reveal": "never"
+        },
+        "group": "build",
         "label": "npm: watch",
         "detail": "npm run watch",
-        "isBackground": true,
         "runOptions": {
           "runOn": "folderOpen"
         }
