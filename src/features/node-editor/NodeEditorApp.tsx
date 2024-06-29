@@ -1,4 +1,5 @@
-import React from 'react';
+import React from 'react'
+import ReactDOM from 'react-dom'
 
 /**
  * Renders the main Node Editor application component.
@@ -10,7 +11,14 @@ const NodeEditorApp: React.FC = () => {
       <h1>Node Editor</h1>
       <p>This is a React-based Node Editor!</p>
     </div>
-  );
-};
+  )
+}
 
-export default NodeEditorApp;
+/**
+ * Renders the main Node Editor application component to the DOM element with the ID 'root'.
+ */
+function renderApp() {
+  ReactDOM.render(<NodeEditorApp />, document.getElementById('root'))
+}
+
+renderApp()

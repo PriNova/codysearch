@@ -47,14 +47,14 @@ async function main() {
 
   // Webview bundle
   const webviewCtx = await esbuild.context({
-    entryPoints: ['src/features/node-editor/index.tsx'],
+    entryPoints: ['src/features/node-editor/NodeEditorApp.tsx'],
     bundle: true,
     format: 'esm',
     minify: production,
     sourcemap: !production,
     sourcesContent: false,
     platform: 'browser',
-    outdir: 'dist/webview',
+    outdir: 'dist/features/node-editor/webview',
     logLevel: 'info',
     loader: { '.ts': 'ts', '.tsx': 'tsx' },
     define: {

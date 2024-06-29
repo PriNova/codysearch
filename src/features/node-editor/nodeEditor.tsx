@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from 'vscode'
 
 /**
  * Opens a webview panel for a Node Editor UI.
@@ -18,23 +18,23 @@ export function openNodeEditor(context: vscode.ExtensionContext) {
     {
       enableScripts: true
     }
-  );
+  )
 
   // Set the webview's initial HTML content
-  panel.webview.html = getWebviewContent(panel, context);
+  panel.webview.html = getWebviewContent(panel, context)
 
   // Handle messages from the webview
   panel.webview.onDidReceiveMessage(
     message => {
       switch (message.command) {
         case 'alert':
-          vscode.window.showErrorMessage(message.text);
-          return;
+          vscode.window.showErrorMessage(message.text)
+          return
       }
     },
     undefined,
     context.subscriptions
-  );
+  )
 }
 
 /**
@@ -49,7 +49,14 @@ export function openNodeEditor(context: vscode.ExtensionContext) {
  * @returns The HTML content for the webview panel.
  */
 function getWebviewContent(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
-  let scriptSrc = panel.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, "dist", "webview", "index.js"))
+  let scriptSrc = panel.webview.asWebviewUri(
+    vscode.Uri.joinPath(
+      context.extensionUri,
+      'dist/features/node-editor',
+      'webview',
+      'NodeEditorApp.js'
+    )
+  )
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -63,5 +70,5 @@ function getWebviewContent(panel: vscode.WebviewPanel, context: vscode.Extension
         <script src="${scriptSrc}"></script>
     </body>
     </html>
-  `;
+  `
 }
