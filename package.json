@@ -40,7 +40,7 @@
                 "title": "Cody-Architect: Read PDF"
             },
             {
-                "command": "cody-architect.openNodeEditor",
+                "command": "cody-architect.createNodeEditorPanel",
                 "title": "Cody-Architect: Open Node Editor"
             }
               

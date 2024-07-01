@@ -1,12 +1,24 @@
 import * as vscode from 'vscode'
 
+/**
+ * Represents a frame in the Node Editor UI.
+ *
+ * A frame has an unique identifier (`id`), a display name (`name`), and a file path (`path`).
+ */
 interface Frame {
   id: string
   name: string
   path: string
 }
 
-export function openNodeEditor(context: vscode.ExtensionContext) {
+/**
+ * Opens a webview panel for a Node Editor UI.
+ *
+ * The function creates a new webview panel, sets its HTML content using the `getWebviewContent` function, and listens for messages from the webview to handle frame creation and deletion.
+ *
+ * @param context - The extension context, used to resolve the path to the webview script.
+ */
+export function createNodeEditorPanel(context: vscode.ExtensionContext) {
   const panel = vscode.window.createWebviewPanel(
     'nodeEditor',
     'Node Editor',
@@ -20,6 +32,7 @@ export function openNodeEditor(context: vscode.ExtensionContext) {
 
   panel.webview.html = getWebviewContent(panel, context)
 
+  // Listen for messages from the webview
   panel.webview.onDidReceiveMessage(
     message => {
       switch (message.command) {
@@ -35,23 +48,33 @@ export function openNodeEditor(context: vscode.ExtensionContext) {
     context.subscriptions
   )
 
+  // Handle frame creation
   function createFrame(frame: Frame) {
     frames.push(frame)
     updateWebview()
     vscode.window.showInformationMessage(`Created frame: ${frame.name} at ${frame.path}`)
   }
 
+  // Handle frame deletion
   function deleteFrame(id: string) {
     frames = frames.filter(frame => frame.id !== id)
     updateWebview()
     vscode.window.showInformationMessage(`Deleted frame with id: ${id}`)
   }
 
+  // Update the webview with the latest frames
   function updateWebview() {
     panel.webview.postMessage({ type: 'updateFrames', frames })
   }
 }
 
+/**
+ * Generates the HTML content for the webview panel used in the Node Editor.
+ *
+ * @param panel - The webview panel instance.
+ * @param context - The extension context.
+ * @returns The HTML content for the webview panel.
+ */
 function getWebviewContent(panel: vscode.WebviewPanel, context: vscode.ExtensionContext) {
   let scriptSrc = panel.webview.asWebviewUri(
     vscode.Uri.joinPath(

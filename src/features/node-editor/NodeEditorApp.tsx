@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 
+// Frame interface
 interface Frame {
   id: string
   name: string
@@ -16,13 +17,43 @@ declare global {
   }
 }
 
+// Get vscode API
 const vscode = window.acquireVsCodeApi()
 
+// CreateFrameButton component
+const CreateFrameButton: React.FC<{
+  newFrameName: string
+  newFramePath: string
+  onCreate: () => void
+}> = ({ newFrameName, newFramePath, onCreate }) => {
+  return (
+    <button onClick={onCreate} disabled={!newFrameName || !newFramePath}>
+      Create Frame
+    </button>
+  )
+}
+
+// DeleteFrameButton component
+const DeleteFrameButton: React.FC<{
+  frameId: string
+  onDelete: (id: string) => void
+}> = ({ frameId, onDelete }) => {
+  return (
+    <button onClick={() => onDelete(frameId)}>
+      Delete Frame
+    </button>
+  )
+}
+
+
+// Node Editor App component
 const NodeEditorApp: React.FC = () => {
+  // State for frames
   const [frames, setFrames] = useState<Frame[]>([])
   const [newFrameName, setNewFrameName] = useState('')
   const [newFramePath, setNewFramePath] = useState('')
 
+  // Handle input change events
   useEffect(() => {
     // Set up event listener for messages from the extension
     window.addEventListener('message', event => {
@@ -35,7 +66,9 @@ const NodeEditorApp: React.FC = () => {
     })
   }, [])
 
+  // Handle create button change events
   const createFrame = () => {
+    // Check if both fields are filled
     if (newFrameName && newFramePath) {
       const newFrame: Frame = {
         id: Date.now().toString(),
@@ -49,11 +82,13 @@ const NodeEditorApp: React.FC = () => {
         frame: newFrame
       })
 
+      // Reset input fields
       setNewFrameName('')
       setNewFramePath('')
     }
   }
 
+  // Handle delete button click events
   const deleteFrame = (id: string) => {
     // Send message to extension
     vscode.postMessage({
@@ -78,7 +113,11 @@ const NodeEditorApp: React.FC = () => {
           value={newFramePath}
           onChange={e => setNewFramePath(e.target.value)}
         />
-        <button onClick={createFrame}>Create Frame</button>
+        <CreateFrameButton
+          newFrameName={newFrameName}
+          newFramePath={newFramePath}
+          onCreate={createFrame}
+        />
       </div>
       <div>
         <h2>Frames:</h2>
@@ -86,7 +125,7 @@ const NodeEditorApp: React.FC = () => {
           {frames.map(frame => (
             <li key={frame.id}>
               {frame.name} - {frame.path}
-              <button onClick={() => deleteFrame(frame.id)}>Delete</button>
+              <DeleteFrameButton frameId={frame.id} onDelete={() => deleteFrame(frame.id)} />
             </li>
           ))}
         </ul>

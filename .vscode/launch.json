@@ -14,7 +14,7 @@
             "args": [
 				"--extensionDevelopmentPath=${workspaceFolder}"
 			],
-            "postDebugTask": "npm: watch",
+            "preLaunchTask": "npm: compile",
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ]
