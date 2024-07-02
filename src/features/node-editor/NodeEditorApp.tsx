@@ -12,6 +12,12 @@ export interface Frame {
   path: string
 }
 
+export interface Node {
+  id: string
+  name: string
+  frameId: string
+}
+
 // Declare vscode API
 declare global {
   interface Window {
@@ -52,9 +58,13 @@ const NodeEditorApp: React.FC = () => {
   const [newFrameName, setNewFrameName] = useState('')
   const [newFramePath, setNewFramePath] = useState('')
 
+  const [nodes, setNodes] = useState<Node[]>([])
+  const [newNodeName, setNewNodeName] = useState('')
+  const [selectedFrameId, setSelectedFrameId] = useState('')
+
   // Handle input change events
   useEffect(() => {
-    // Listen for messages from the extension for future updates
+    // Set up event listener for messages from the extension for future updates
     window.addEventListener('message', event => {
       const message = event.data
       switch (message.type) {
@@ -80,7 +90,8 @@ const NodeEditorApp: React.FC = () => {
 
       // Send message to extension
       vscode.postMessage({
-        command: 'createFrame',
+        type: 'frame',
+        action: 'create',
         frame: newFrame
       })
 
@@ -97,7 +108,45 @@ const NodeEditorApp: React.FC = () => {
 
     // Send message to extension
     vscode.postMessage({
-      command: 'deleteFrame',
+      type: 'frame',
+      action: 'delete',
+      id: id
+    })
+  }
+
+  // Handle create Button for Nodes
+  const createNode = () => {
+    // Check if both fields are filled
+    if (newNodeName && selectedFrameId) {
+      const newNode: Node = {
+        id: Date.now().toString(),
+        name: newNodeName,
+        frameId: selectedFrameId
+      }
+
+      // Add node to list of nodes
+      setNodes(prevNodes => [...prevNodes, newNode])
+
+      // Send message to extension
+      vscode.postMessage({
+        type: 'node',
+        action: 'create',
+        node: newNode
+      })
+
+      setNewNodeName('')
+      setSelectedFrameId('')
+    }
+  }
+
+  const deleteNode = (id: string) => {
+    // Get node by id and remove it from the list of nodes
+    setNodes(prevNodes => prevNodes.filter(node => node.id !== id))
+
+    // Send message to extension
+    vscode.postMessage({
+      type: 'node',
+      action: 'delete',
       id: id
     })
   }
@@ -131,6 +180,36 @@ const NodeEditorApp: React.FC = () => {
             <li key={frame.id}>
               {frame.name} - {frame.path}
               <DeleteFrameButton frameId={frame.id} onDelete={() => deleteFrame(frame.id)} />
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div>
+        <input
+          type="text"
+          placeholder="Node Name"
+          value={newNodeName}
+          onChange={e => setNewNodeName(e.target.value)}
+        />
+        <select value={selectedFrameId} onChange={e => setSelectedFrameId(e.target.value)}>
+          <option value="">Select a Frame</option>
+          {frames.map(frame => (
+            <option key={frame.id} value={frame.id}>
+              {frame.name}
+            </option>
+          ))}
+        </select>
+        <button onClick={createNode} disabled={!newNodeName || !selectedFrameId}>
+          Create Node
+        </button>
+      </div>
+      <div>
+        <h2>Nodes:</h2>
+        <ul>
+          {nodes.map(node => (
+            <li key={node.id}>
+              {node.name} - Frame: {frames.find(f => f.id === node.frameId)?.name}
+              <button onClick={() => deleteNode(node.id)}>Delete Node</button>
             </li>
           ))}
         </ul>

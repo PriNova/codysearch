@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { Frame } from './NodeEditorApp'
+import { Frame, Node } from './NodeEditorApp'
 
 /**
  * Opens a webview panel for a Node Editor UI.
@@ -23,12 +23,20 @@ export function createNodeEditorPanel(context: vscode.ExtensionContext) {
   // Listen for messages from the webview
   panel.webview.onDidReceiveMessage(
     message => {
-      switch (message.command) {
-        case 'createFrame':
-          createFrame(message.frame)
+      switch (message.type) {
+        case 'frame':
+          if (message.action === 'create') {
+            createFrame(message.frame)
+          } else if (message.action === 'delete') {
+            deleteFrame(message.id)
+          }
           break
-        case 'deleteFrame':
-          deleteFrame(message.id)
+        case 'node':
+          if (message.action === 'create') {
+            createNode(message.node)
+          } else if (message.action === 'delete') {
+            deleteNode(message.id)
+          }
           break
       }
     },
@@ -44,6 +52,16 @@ export function createNodeEditorPanel(context: vscode.ExtensionContext) {
   // Handle frame deletion
   function deleteFrame(id: string) {
     vscode.window.showInformationMessage(`Deleted frame with id: ${id}`)
+  }
+
+  // Handle node creation
+  function createNode(node: Node) {
+    vscode.window.showInformationMessage(`Created node: ${node.name} in frame: ${node.frameId}`)
+  }
+
+  // Handle node deletion
+  function deleteNode(id: string) {
+    vscode.window.showInformationMessage(`Deleted node with id: ${id}`)
   }
 }
 
