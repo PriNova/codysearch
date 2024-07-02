@@ -18,8 +18,6 @@ export function createNodeEditorPanel(context: vscode.ExtensionContext) {
     }
   )
 
-  //  let frames: Frame[] = []
-
   panel.webview.html = getWebviewContent(panel, context)
 
   // Listen for messages from the webview
