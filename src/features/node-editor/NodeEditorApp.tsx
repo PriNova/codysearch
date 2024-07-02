@@ -51,6 +51,48 @@ const DeleteFrameButton: React.FC<{
   return <button onClick={() => onDelete(frameId)}>Delete Frame</button>
 }
 
+const CreateNodeButton: React.FC<{
+  newNodeName: string
+  selectedFrameId: string
+  onCreate: () => void
+}> = ({ newNodeName, selectedFrameId, onCreate }) => {
+  return (
+    <button onClick={onCreate} disabled={!newNodeName || !selectedFrameId}>
+      Create Node
+    </button>
+  )
+}
+
+const DeleteNodeButton: React.FC<{
+  nodeId: string
+  onDelete: (id: string) => void
+}> = ({ nodeId, onDelete }) => {
+  return <button onClick={() => onDelete(nodeId)}>Delete Node</button>
+}
+
+interface FrameSelectorProps {
+  frames: Frame[]
+  selectedFrameId: string
+  onFrameSelect: (frameId: string) => void
+}
+
+const FrameSelector: React.FC<FrameSelectorProps> = ({
+  frames,
+  selectedFrameId,
+  onFrameSelect
+}) => {
+  return (
+    <select value={selectedFrameId} onChange={e => onFrameSelect(e.target.value)}>
+      <option value="">Select a Frame</option>
+      {frames.map(frame => (
+        <option key={frame.id} value={frame.id}>
+          {frame.name}
+        </option>
+      ))}
+    </select>
+  )
+}
+
 // Node Editor App component
 const NodeEditorApp: React.FC = () => {
   // State for frames
@@ -191,17 +233,16 @@ const NodeEditorApp: React.FC = () => {
           value={newNodeName}
           onChange={e => setNewNodeName(e.target.value)}
         />
-        <select value={selectedFrameId} onChange={e => setSelectedFrameId(e.target.value)}>
-          <option value="">Select a Frame</option>
-          {frames.map(frame => (
-            <option key={frame.id} value={frame.id}>
-              {frame.name}
-            </option>
-          ))}
-        </select>
-        <button onClick={createNode} disabled={!newNodeName || !selectedFrameId}>
-          Create Node
-        </button>
+        <FrameSelector
+          frames={frames}
+          selectedFrameId={selectedFrameId}
+          onFrameSelect={setSelectedFrameId}
+        />
+        <CreateNodeButton
+          newNodeName={newNodeName}
+          selectedFrameId={selectedFrameId}
+          onCreate={createNode}
+        />
       </div>
       <div>
         <h2>Nodes:</h2>
@@ -209,7 +250,7 @@ const NodeEditorApp: React.FC = () => {
           {nodes.map(node => (
             <li key={node.id}>
               {node.name} - Frame: {frames.find(f => f.id === node.frameId)?.name}
-              <button onClick={() => deleteNode(node.id)}>Delete Node</button>
+              <DeleteNodeButton nodeId={node.id} onDelete={deleteNode} />
             </li>
           ))}
         </ul>
