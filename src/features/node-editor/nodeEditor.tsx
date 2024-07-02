@@ -1,15 +1,5 @@
 import * as vscode from 'vscode'
-
-/**
- * Represents a frame in the Node Editor UI.
- *
- * A frame has an unique identifier (`id`), a display name (`name`), and a file path (`path`).
- */
-interface Frame {
-  id: string
-  name: string
-  path: string
-}
+import { Frame } from './NodeEditorApp'
 
 /**
  * Opens a webview panel for a Node Editor UI.
@@ -28,7 +18,7 @@ export function createNodeEditorPanel(context: vscode.ExtensionContext) {
     }
   )
 
-  let frames: Frame[] = []
+  //  let frames: Frame[] = []
 
   panel.webview.html = getWebviewContent(panel, context)
 
@@ -50,21 +40,12 @@ export function createNodeEditorPanel(context: vscode.ExtensionContext) {
 
   // Handle frame creation
   function createFrame(frame: Frame) {
-    frames.push(frame)
-    updateWebview()
     vscode.window.showInformationMessage(`Created frame: ${frame.name} at ${frame.path}`)
   }
 
   // Handle frame deletion
   function deleteFrame(id: string) {
-    frames = frames.filter(frame => frame.id !== id)
-    updateWebview()
     vscode.window.showInformationMessage(`Deleted frame with id: ${id}`)
-  }
-
-  // Update the webview with the latest frames
-  function updateWebview() {
-    panel.webview.postMessage({ type: 'updateFrames', frames })
   }
 }
 

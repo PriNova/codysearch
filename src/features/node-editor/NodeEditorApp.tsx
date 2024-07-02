@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom'
 
-// Frame interface
-interface Frame {
+/**
+ * Represents a frame in the Node Editor UI.
+ *
+ * A frame has an unique identifier (`id`), a display name (`name`), and a file path (`path`).
+ */
+export interface Frame {
   id: string
   name: string
   path: string
@@ -38,13 +42,8 @@ const DeleteFrameButton: React.FC<{
   frameId: string
   onDelete: (id: string) => void
 }> = ({ frameId, onDelete }) => {
-  return (
-    <button onClick={() => onDelete(frameId)}>
-      Delete Frame
-    </button>
-  )
+  return <button onClick={() => onDelete(frameId)}>Delete Frame</button>
 }
-
 
 // Node Editor App component
 const NodeEditorApp: React.FC = () => {
@@ -55,7 +54,7 @@ const NodeEditorApp: React.FC = () => {
 
   // Handle input change events
   useEffect(() => {
-    // Set up event listener for messages from the extension
+    // Listen for messages from the extension for future updates
     window.addEventListener('message', event => {
       const message = event.data
       switch (message.type) {
@@ -76,6 +75,9 @@ const NodeEditorApp: React.FC = () => {
         path: newFramePath
       }
 
+      // Add frame to list of frames
+      setFrames(prevFrames => [...prevFrames, newFrame])
+
       // Send message to extension
       vscode.postMessage({
         command: 'createFrame',
@@ -90,6 +92,9 @@ const NodeEditorApp: React.FC = () => {
 
   // Handle delete button click events
   const deleteFrame = (id: string) => {
+    // Get frame by id and remove it from the list of frames
+    setFrames(prevFrames => prevFrames.filter(frame => frame.id !== id))
+
     // Send message to extension
     vscode.postMessage({
       command: 'deleteFrame',
