@@ -91,7 +91,7 @@ export async function webSearch(): Promise<void> {
           clearInterval(progressInterval)
           statusBarItem.hide()
           statusBarItem.dispose()
-          
+
           // Display the results in a Cody AI mention
           displaySearchResultsInMention(query, data)
         })
@@ -119,7 +119,7 @@ export async function webSearch(): Promise<void> {
 export async function displaySearchResultsInMention(query: string, message: string) {
   // Create the input prompt prefix for the mention
   const prefix = `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThese are the results of the query:\n\n${message}`
-  
+
   // Truncate the web result to 80,000 characters to avoid exceeding the mention limit
   const truncatedWebResult = prefix.slice(0, 80000)
 
