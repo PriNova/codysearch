@@ -10,7 +10,7 @@
         "type": "git",
         "url": "https://github.com/PriNova/codysearch"
     },
-    "version": "0.0.13",
+    "version": "0.0.14",
     "engines": {
         "vscode": "^1.90.0"
     },
@@ -24,6 +24,16 @@
         "onStartup"
     ],
     "contributes": {
+        "configuration": {
+            "title": "Cody Architect",
+            "properties": {
+                "codyArchitect.jinaApiKey": {
+                    "type": "string",
+                    "default": "",
+                    "description": "API key for Jina AI services"
+                }
+            }
+        },
         "permissions": [
             {
                 "fileSystem": [
@@ -39,6 +49,10 @@
             {
                 "command": "cody-architect.pdfread",
                 "title": "Cody-Architect: Read PDF"
+            },
+            {
+                "command": "cody-architect.setJinaApiKey",
+                "title": "Cody-Architect: Set Jina AI API Key"
             }
         ]
     },

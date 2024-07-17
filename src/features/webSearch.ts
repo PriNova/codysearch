@@ -10,7 +10,7 @@ import { outputChannel } from '../outputChannel'
  *
  * @returns {Promise<void>} A Promise that resolves when the search is complete or an error occurs.
  */
-export async function webSearch(): Promise<void> {
+export async function webSearch(apiKey: string): Promise<void> {
   // Get the extension ID.
   const extensionID = 'sourcegraph.cody-ai'
 
@@ -62,7 +62,8 @@ export async function webSearch(): Promise<void> {
         method: 'GET',
         headers: {
           'X-With-Generated-Alt': 'true',
-          'X-With-Links-Summary': 'true'
+          'X-With-Links-Summary': 'true',
+          ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
         }
       }
 

@@ -3,7 +3,7 @@ import * as https from 'https'
 import * as fs from 'fs'
 import { outputChannel } from '../outputChannel'
 
-export async function readPDF() {
+export async function readPDF(apiKey: string) {
   // Get the extension ID.
   const extensionID = 'sourcegraph.cody-ai'
 
@@ -53,7 +53,8 @@ export async function readPDF() {
         method: 'GET',
         headers: {
           'X-With-Generated-Alt': 'true',
-          'X-With-Links-Summary': 'true'
+          'X-With-Links-Summary': 'true',
+          ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
         }
       }
 
