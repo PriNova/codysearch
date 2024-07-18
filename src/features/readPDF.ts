@@ -30,11 +30,7 @@ export async function readPDF(apiKey: string) {
         return
       }
 
-      outputChannel.appendLine(`ReadPDF: Gathering the PDF result for "${query}"`)
-
       const url = `https://r.jina.ai/${query}`
-
-      outputChannel.appendLine(`ReadPDF: Gathering the PDF result at "${url}"`)
 
       // Create a status bar item for the progress indicator
       const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -65,7 +61,6 @@ export async function readPDF(apiKey: string) {
 
         // Handle the response data
         response.on('data', chunk => {
-          outputChannel.appendLine('ReadPDF: Recieving chunk: ' + chunk)
           data += chunk
         })
 
@@ -140,7 +135,6 @@ export async function displayPDFResultInMention(query: string, PDF: string) {
 
       // Execute the command to mention the file
       await vscode.commands.executeCommand('cody.mention.file', file)
-      outputChannel.appendLine('ReadPDF: displayPDFResultInMention: PDF Mention created')
     }
   } catch (err: any) {
     // Log any errors that occur

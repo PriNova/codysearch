@@ -1,5 +1,9 @@
 ## Change-Log:
 
+### Version 0.0.15 (2024-07-18)
+
+- Improve PDF logging and bump version to 0.0.15
+
 ### Version 0.0.14 (2024-07-17)
 
 - Added configuration setting for user-provided Jina AI API key
