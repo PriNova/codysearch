@@ -1,5 +1,11 @@
 ## Change-Log:
 
+### Version 0.0.16 (2024-07-25)
+
+- Enhanced error handling for API responses in readPDF and webSearch features
+- Added URL filtering option to narrow down web search results based on domains or sub-domains
+- Improved code structure and error reporting in webSearch function
+
 ### Version 0.0.15 (2024-07-18)
 
 - Improve PDF logging and bump version to 0.0.15

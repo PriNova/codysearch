@@ -26,89 +26,121 @@ export async function webSearch(apiKey: string): Promise<void> {
   }
 
   // Prompt the user to input a search query
-  vscode.window
-    .showInputBox({
-      prompt: 'Enter your web search query',
-      placeHolder: 'Type your search query here'
+  const query = await vscode.window.showInputBox({
+    prompt: 'Enter your web search query',
+    placeHolder: 'Type your search query here'
+  })
+
+  // If the user cancels the input, return.
+  if (!query) {
+    return
+  }
+
+  // Prompt the user to input an URL to narrow down the search results
+  const urlSite = await vscode.window.showInputBox({
+    prompt: 'Enter a URL to narrow down the search results',
+    placeHolder: 'Type your URL here'
+  })
+
+  outputChannel.appendLine(`WebSearch: Gathering the web result for "${query}"`)
+  // Encode the query
+  const encodedQuery = encodeURIComponent(query)
+  const encodedURLSite = encodeURIComponent(urlSite ? urlSite : '')
+  const url = `https://s.jina.ai/${encodedQuery}?site=${encodedURLSite}`
+
+  outputChannel.appendLine(`WebSearch: Gathering the web result at "${url}"`)
+
+  // Create a status bar item for the progress indicator
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
+  statusBarItem.text = 'Gathering the web result... 0s'
+  statusBarItem.show()
+
+  // Update the progress every second
+  let progress = 0
+  const updateProgress = () => {
+    progress += 1
+    statusBarItem.text = `Gathering the web result... ${progress}s`
+  }
+  const progressInterval = setInterval(updateProgress, 1000)
+
+  // Set headers for Image Caption, gather links at the end of the response and narrow down the search results
+  const headers = {
+    'X-With-Generated-Alt': 'true',
+    'X-With-Links-Summary': 'true',
+    ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
+    //...(urlSite?.trim() && { "site": `${urlSite}` })
+  }
+
+  // Print the headers const in output channel
+  outputChannel.appendLine('WebSearch: Request headers:')
+  Object.entries(headers).forEach(([key, value]) => {
+    outputChannel.appendLine(`  ${key}: ${value}`)
+  })
+
+  const options: https.RequestOptions = {
+    method: 'GET',
+    headers,
+    timeout: 60000
+  }
+
+  // Make the HTTPS GET request
+  const clientRequest = https.get(url, options, response => {
+    let data = ''
+    response.setEncoding('utf8')
+
+    // Handle the response data
+    response.on('data', chunk => {
+      //outputChannel.appendLine('WebSearch: Recieving chunk: ' + chunk)
+      data += chunk
     })
-    .then(query => {
-      // If the user cancels the input, return.
-      if (!query) {
-        return
-      }
 
-      outputChannel.appendLine(`WebSearch: Gathering the web result for "${query}"`)
-      // Encode the query
-      const encodedQuery = encodeURIComponent(query)
-      const url = `https://s.jina.ai/${encodedQuery}`
+    response.on('error', (err: any) => {
+      // Clear the progress interval and hide the status bar item
+      outputChannel.appendLine('WebSearch: Error with code: ' + err)
+      clearInterval(progressInterval)
+      statusBarItem.hide()
+      statusBarItem.dispose()
+    })
 
-      outputChannel.appendLine(`WebSearch: Gathering the web result at "${url}"`)
+    // Handle the response end
+    response.on('end', () => {
+      // Clear the progress interval and hide the status bar item
+      clearInterval(progressInterval)
+      statusBarItem.hide()
+      statusBarItem.dispose()
 
-      // Create a status bar item for the progress indicator
-      const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
-      statusBarItem.text = 'Gathering the web result... 0s'
-      statusBarItem.show()
+      // Try to parse the data as JSON
+      try {
+        const jsonData = JSON.parse(data)
 
-      // Update the progress every second
-      let progress = 0
-      const updateProgress = () => {
-        progress += 1
-        statusBarItem.text = `Gathering the web result... ${progress}s`
-      }
-      const progressInterval = setInterval(updateProgress, 1000)
-
-      // Set headers for Image Caption and gather links at the end of the response
-      const options: https.RequestOptions = {
-        method: 'GET',
-        headers: {
-          'X-With-Generated-Alt': 'true',
-          'X-With-Links-Summary': 'true',
-          ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
+        // Check if it's an error response
+        if (jsonData.code && jsonData.message) {
+          // Handle the error
+          const errorMessage = `Error ${jsonData.code}: ${jsonData.message}`
+          vscode.window.showErrorMessage(`Jina API: ${errorMessage}`)
+          outputChannel.appendLine(`Jina API: ${errorMessage}`)
+        } else {
+          // It's a valid JSON response, but not an error
+          // You might want to handle this case differently
+          displaySearchResultsInMention(query, JSON.stringify(jsonData, null, 2))
         }
+      } catch (e) {
+        // If it's not valid JSON, treat it as a regular string response
+        displaySearchResultsInMention(query, data)
       }
-
-      // Make the HTTPS GET request
-      const clientRequest = https.get(url, options, response => {
-        let data = ''
-        response.setEncoding('utf8')
-
-        // Handle the response data
-        response.on('data', chunk => {
-          //outputChannel.appendLine('WebSearch: Recieving chunk: ' + chunk)
-          data += chunk
-        })
-
-        response.on('error', (err: any) => {
-          // Clear the progress interval and hide the status bar item
-          outputChannel.appendLine('WebSearch: Error with code: ' + err)
-          clearInterval(progressInterval)
-          statusBarItem.hide()
-          statusBarItem.dispose()
-        })
-
-        // Handle the response end
-        response.on('end', () => {
-          // Clear the progress interval and hide the status bar item
-          clearInterval(progressInterval)
-          statusBarItem.hide()
-          statusBarItem.dispose()
-
-          // Display the results in a Cody AI mention
-          displaySearchResultsInMention(query, data)
-        })
-      })
-
-      clientRequest.on('error', () => {
-        // Clear the progress interval and hide the status bar item
-        clearInterval(progressInterval)
-        statusBarItem.hide()
-        statusBarItem.dispose()
-
-        // Show an error message to the user
-        vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
-        outputChannel.appendLine('WebSearch: An error occurred while making the HTTP request.')
-      })
     })
+  })
+
+  clientRequest.on('error', () => {
+    // Clear the progress interval and hide the status bar item
+    clearInterval(progressInterval)
+    statusBarItem.hide()
+    statusBarItem.dispose()
+
+    // Show an error message to the user
+    vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
+    outputChannel.appendLine('WebSearch: An error occurred while making the HTTP request.')
+  })
 }
 
 /**

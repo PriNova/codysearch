@@ -40,12 +40,26 @@ Once set, Cody Architect will use your personal API key for web searches and PDF
 
 ![Animation2](https://github.com/PriNova/codysearch/assets/31413214/933cfc72-b950-4474-98ab-863e0b3927e8)
 
+## New Features (2024-07-25):
+
+### Enhanced Web Search:
+
+1. URL Filtering: You can now narrow down your web search results by providing a specific URL.
+   - After entering your search query, you'll be prompted to enter a URL to filter the results to a specific URL domain or sub-domain (e.g. blender.org, docs.blender.org/manual/en/latest)
+   - This is optional and an empty URL will return all results.
+   - This allows for more targeted and relevant search outcomes.
+
+2. Improved Error Handling:
+   - The extension now provides better feedback for API errors. (recharge/refresh the Jina.ai API key)
+   - Error messages are displayed both in the VS Code interface and the output channel for easier troubleshooting.
+
 ### Web Search:
 
 1. Open a Cody chat window
 1. Press Ctrl+Shift+P (Windows/Linux) or Cmd+Shift+P (Mac) to bring up the Command Palette
 1. Search for "Cody Architect - Search the web"
 1. The Input Prompt Box appears and there you can input your search query.
+1. (OPTIONAL) The next input prompt will ask you to enter a URL to filter the results to a specific URL domain or sub-domain (e.g. blender.org, docs.blender.org/manual/en/latest)
 1. Wait for about max 10 seconds until the query will be inserted into the Cody Chat input box.
 1. Submit the query by pressing Enter in the Chat view if it is displayed as '@' mention file
 

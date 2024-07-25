@@ -79,6 +79,26 @@ export async function readPDF(apiKey: string) {
           statusBarItem.hide()
           statusBarItem.dispose()
 
+          // Try to parse the data as JSON
+          try {
+            const jsonData = JSON.parse(data)
+
+            // Check if it's an error response
+            if (jsonData.code && jsonData.message) {
+              // Handle the error
+              const errorMessage = `Error ${jsonData.code}: ${jsonData.message}`
+              vscode.window.showErrorMessage(`Jina API: ${errorMessage}`)
+              outputChannel.appendLine(`Jina API: ${errorMessage}`)
+            } else {
+              // It's a valid JSON response, but not an error
+              // You might want to handle this case differently
+              displayPDFResultInMention(query, JSON.stringify(jsonData, null, 2))
+            }
+          } catch (e) {
+            // If it's not valid JSON, treat it as a regular string response
+            displayPDFResultInMention(query, data)
+          }
+
           // Display the results in a Cody AI mention
           displayPDFResultInMention(query, data)
         })
