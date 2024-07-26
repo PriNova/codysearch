@@ -10,7 +10,7 @@
         "type": "git",
         "url": "https://github.com/PriNova/codysearch"
     },
-    "version": "0.0.16",
+    "version": "0.0.17",
     "engines": {
         "vscode": "^1.90.0"
     },
@@ -92,6 +92,7 @@
         "@openctx/client": "^0.0.19",
         "@openctx/protocol": "^0.0.15",
         "@openctx/provider": "^0.0.14",
+        "tiktoken": "^1.0.15",
         "tmp": "^0.2.3"
     }
 }

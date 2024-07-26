@@ -1,5 +1,12 @@
 ## Change-Log:
 
+### Version 0.0.17 (2024-07-26)
+
+- Implemented token-based truncation using tiktoken library for web search and PDF results
+- Enhanced API request headers for improved caching control
+- Improved JSON response handling in webSearch function
+- Updated dependencies: added tiktoken v1.0.15
+
 ### Version 0.0.16 (2024-07-25)
 
 - Enhanced error handling for API responses in readPDF and webSearch features

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import * as https from 'https'
 import * as fs from 'fs'
+import { get_encoding } from "tiktoken"
 import { outputChannel } from '../outputChannel'
 
 /**
@@ -67,8 +68,9 @@ export async function webSearch(apiKey: string): Promise<void> {
   const headers = {
     'X-With-Generated-Alt': 'true',
     'X-With-Links-Summary': 'true',
-    ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
-    //...(urlSite?.trim() && { "site": `${urlSite}` })
+    'X-No-Cache': 'true',
+    ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` }),
+    'Accept': 'application/json',
   }
 
   // Print the headers const in output channel
@@ -119,10 +121,12 @@ export async function webSearch(apiKey: string): Promise<void> {
           const errorMessage = `Error ${jsonData.code}: ${jsonData.message}`
           vscode.window.showErrorMessage(`Jina API: ${errorMessage}`)
           outputChannel.appendLine(`Jina API: ${errorMessage}`)
-        } else {
-          // It's a valid JSON response, but not an error
-          // You might want to handle this case differently
-          displaySearchResultsInMention(query, JSON.stringify(jsonData, null, 2))
+        } else {  // It's a valid JSON response, but not an error
+          
+          // Extract the results
+          const results = jsonData.data.map((result: any) => result.content)
+          //outputChannel.appendLine(`WebSearch: Found ${results} results`)
+          displaySearchResultsInMention(query, results)
         }
       } catch (e) {
         // If it's not valid JSON, treat it as a regular string response
@@ -152,9 +156,23 @@ export async function webSearch(apiKey: string): Promise<void> {
 export async function displaySearchResultsInMention(query: string, message: string) {
   // Create the input prompt prefix for the mention
   const prefix = `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThese are the results of the query:\n\n${message}`
+  
+  // Use the tiktoken library for counting the number of token in the 'prefix' string
+  const enc = get_encoding("cl100k_base")
 
-  // Truncate the web result to 80,000 characters to avoid exceeding the mention limit
-  const truncatedWebResult = prefix.slice(0, 80000)
+  // Reduce the 'prefix' string until the tokens are lesser than 28000 tokens.
+  let truncatedWebResult = prefix;
+  while (true) {
+    const encoded = enc.encode(truncatedWebResult)
+    if (encoded.length <= 28000) {
+      break
+    }
+    // Reduce by approximately 10% each iteration
+    const newLength = Math.floor(truncatedWebResult.length * 0.9)
+    truncatedWebResult = truncatedWebResult.slice(0, newLength)
+  }
+  
+  outputChannel.appendLine(`WebSearch: Truncated prefix to ${enc.encode(truncatedWebResult).length} tokens to avoid exceeding the mention limit`)
 
   try {
     // Get the workspace folders
@@ -189,5 +207,20 @@ export async function displaySearchResultsInMention(query: string, message: stri
     // Log any errors that occur
     console.error(err)
     outputChannel.appendLine('WebSearch: displaySearchResultsInMention: ' + err)
+  }
+}
+
+function truncateToTokenLimit(text: string, tokenLimit: number): string {
+  const enc = new TextEncoder();
+  let currentText = text;
+  
+  while (true) {
+    const encoded = enc.encode(currentText);
+    if (encoded.length <= tokenLimit) {
+      return currentText;
+    }
+    // Reduce by approximately 10% each iteration
+    const newLength = Math.floor(currentText.length * 0.9);
+    currentText = currentText.slice(0, newLength);
   }
 }
