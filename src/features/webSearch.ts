@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import * as https from 'https'
 import * as fs from 'fs'
+import { get_encoding } from "tiktoken"
 import { outputChannel } from '../outputChannel'
 
 /**
@@ -10,7 +11,7 @@ import { outputChannel } from '../outputChannel'
  *
  * @returns {Promise<void>} A Promise that resolves when the search is complete or an error occurs.
  */
-export async function webSearch(): Promise<void> {
+export async function webSearch(apiKey: string): Promise<void> {
   // Get the extension ID.
   const extensionID = 'sourcegraph.cody-ai'
 
@@ -26,88 +27,124 @@ export async function webSearch(): Promise<void> {
   }
 
   // Prompt the user to input a search query
-  vscode.window
-    .showInputBox({
-      prompt: 'Enter your web search query',
-      placeHolder: 'Type your search query here'
+  const query = await vscode.window.showInputBox({
+    prompt: 'Enter your web search query',
+    placeHolder: 'Type your search query here'
+  })
+
+  // If the user cancels the input, return.
+  if (!query) {
+    return
+  }
+
+  // Prompt the user to input an URL to narrow down the search results
+  const urlSite = await vscode.window.showInputBox({
+    prompt: 'Enter a URL to narrow down the search results',
+    placeHolder: 'Type your URL here'
+  })
+
+  outputChannel.appendLine(`WebSearch: Gathering the web result for "${query}"`)
+  // Encode the query
+  const encodedQuery = encodeURIComponent(query)
+  const encodedURLSite = encodeURIComponent(urlSite ? urlSite : '')
+  const url = `https://s.jina.ai/${encodedQuery}?site=${encodedURLSite}`
+
+  outputChannel.appendLine(`WebSearch: Gathering the web result at "${url}"`)
+
+  // Create a status bar item for the progress indicator
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
+  statusBarItem.text = 'Gathering the web result... 0s'
+  statusBarItem.show()
+
+  // Update the progress every second
+  let progress = 0
+  const updateProgress = () => {
+    progress += 1
+    statusBarItem.text = `Gathering the web result... ${progress}s`
+  }
+  const progressInterval = setInterval(updateProgress, 1000)
+
+  // Set headers for Image Caption, gather links at the end of the response and narrow down the search results
+  const headers = {
+    'X-With-Generated-Alt': 'true',
+    'X-With-Links-Summary': 'true',
+    'X-No-Cache': 'true',
+    ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` }),
+    'Accept': 'application/json',
+  }
+
+  // Print the headers const in output channel
+  outputChannel.appendLine('WebSearch: Request headers:')
+  Object.entries(headers).forEach(([key, value]) => {
+    outputChannel.appendLine(`  ${key}: ${value}`)
+  })
+
+  const options: https.RequestOptions = {
+    method: 'GET',
+    headers,
+    timeout: 60000
+  }
+
+  // Make the HTTPS GET request
+  const clientRequest = https.get(url, options, response => {
+    let data = ''
+    response.setEncoding('utf8')
+
+    // Handle the response data
+    response.on('data', chunk => {
+      //outputChannel.appendLine('WebSearch: Recieving chunk: ' + chunk)
+      data += chunk
     })
-    .then(query => {
-      // If the user cancels the input, return.
-      if (!query) {
-        return
-      }
 
-      outputChannel.appendLine(`WebSearch: Gathering the web result for "${query}"`)
-      // Encode the query
-      const encodedQuery = encodeURIComponent(query)
-      const url = `https://s.jina.ai/${encodedQuery}`
+    response.on('error', (err: any) => {
+      // Clear the progress interval and hide the status bar item
+      outputChannel.appendLine('WebSearch: Error with code: ' + err)
+      clearInterval(progressInterval)
+      statusBarItem.hide()
+      statusBarItem.dispose()
+    })
 
-      outputChannel.appendLine(`WebSearch: Gathering the web result at "${url}"`)
+    // Handle the response end
+    response.on('end', () => {
+      // Clear the progress interval and hide the status bar item
+      clearInterval(progressInterval)
+      statusBarItem.hide()
+      statusBarItem.dispose()
 
-      // Create a status bar item for the progress indicator
-      const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
-      statusBarItem.text = 'Gathering the web result... 0s'
-      statusBarItem.show()
+      // Try to parse the data as JSON
+      try {
+        const jsonData = JSON.parse(data)
 
-      // Update the progress every second
-      let progress = 0
-      const updateProgress = () => {
-        progress += 1
-        statusBarItem.text = `Gathering the web result... ${progress}s`
-      }
-      const progressInterval = setInterval(updateProgress, 1000)
-
-      // Set headers for Image Caption and gather links at the end of the response
-      const options: https.RequestOptions = {
-        method: 'GET',
-        headers: {
-          'X-With-Generated-Alt': 'true',
-          'X-With-Links-Summary': 'true'
+        // Check if it's an error response
+        if (jsonData.code && jsonData.message) {
+          // Handle the error
+          const errorMessage = `Error ${jsonData.code}: ${jsonData.message}`
+          vscode.window.showErrorMessage(`Jina API: ${errorMessage}`)
+          outputChannel.appendLine(`Jina API: ${errorMessage}`)
+        } else {  // It's a valid JSON response, but not an error
+          
+          // Extract the results
+          const results = jsonData.data.map((result: any) => result.content)
+          //outputChannel.appendLine(`WebSearch: Found ${results} results`)
+          displaySearchResultsInMention(query, results)
         }
+      } catch (e) {
+        // If it's not valid JSON, treat it as a regular string response
+        displaySearchResultsInMention(query, data)
       }
-
-      // Make the HTTPS GET request
-      const clientRequest = https.get(url, options, response => {
-        let data = ''
-        response.setEncoding('utf8')
-
-        // Handle the response data
-        response.on('data', chunk => {
-          //outputChannel.appendLine('WebSearch: Recieving chunk: ' + chunk)
-          data += chunk
-        })
-
-        response.on('error', (err: any) => {
-          // Clear the progress interval and hide the status bar item
-          outputChannel.appendLine('WebSearch: Error with code: ' + err)
-          clearInterval(progressInterval)
-          statusBarItem.hide()
-          statusBarItem.dispose()
-        })
-
-        // Handle the response end
-        response.on('end', () => {
-          // Clear the progress interval and hide the status bar item
-          clearInterval(progressInterval)
-          statusBarItem.hide()
-          statusBarItem.dispose()
-
-          // Display the results in a Cody AI mention
-          displaySearchResultsInMention(query, data)
-        })
-      })
-
-      clientRequest.on('error', () => {
-        // Clear the progress interval and hide the status bar item
-        clearInterval(progressInterval)
-        statusBarItem.hide()
-        statusBarItem.dispose()
-
-        // Show an error message to the user
-        vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
-        outputChannel.appendLine('WebSearch: An error occurred while making the HTTP request.')
-      })
     })
+  })
+
+  clientRequest.on('error', () => {
+    // Clear the progress interval and hide the status bar item
+    clearInterval(progressInterval)
+    statusBarItem.hide()
+    statusBarItem.dispose()
+
+    // Show an error message to the user
+    vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
+    outputChannel.appendLine('WebSearch: An error occurred while making the HTTP request.')
+  })
 }
 
 /**
@@ -119,9 +156,23 @@ export async function webSearch(): Promise<void> {
 export async function displaySearchResultsInMention(query: string, message: string) {
   // Create the input prompt prefix for the mention
   const prefix = `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThese are the results of the query:\n\n${message}`
+  
+  // Use the tiktoken library for counting the number of token in the 'prefix' string
+  const enc = get_encoding("cl100k_base")
 
-  // Truncate the web result to 80,000 characters to avoid exceeding the mention limit
-  const truncatedWebResult = prefix.slice(0, 80000)
+  // Reduce the 'prefix' string until the tokens are lesser than 28000 tokens.
+  let truncatedWebResult = prefix;
+  while (true) {
+    const encoded = enc.encode(truncatedWebResult)
+    if (encoded.length <= 28000) {
+      break
+    }
+    // Reduce by approximately 10% each iteration
+    const newLength = Math.floor(truncatedWebResult.length * 0.9)
+    truncatedWebResult = truncatedWebResult.slice(0, newLength)
+  }
+  
+  outputChannel.appendLine(`WebSearch: Truncated prefix to ${enc.encode(truncatedWebResult).length} tokens to avoid exceeding the mention limit`)
 
   try {
     // Get the workspace folders
@@ -156,5 +207,20 @@ export async function displaySearchResultsInMention(query: string, message: stri
     // Log any errors that occur
     console.error(err)
     outputChannel.appendLine('WebSearch: displaySearchResultsInMention: ' + err)
+  }
+}
+
+function truncateToTokenLimit(text: string, tokenLimit: number): string {
+  const enc = new TextEncoder();
+  let currentText = text;
+  
+  while (true) {
+    const encoded = enc.encode(currentText);
+    if (encoded.length <= tokenLimit) {
+      return currentText;
+    }
+    // Reduce by approximately 10% each iteration
+    const newLength = Math.floor(currentText.length * 0.9);
+    currentText = currentText.slice(0, newLength);
   }
 }

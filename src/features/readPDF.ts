@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 import * as https from 'https'
 import * as fs from 'fs'
+import { get_encoding } from "tiktoken"
 import { outputChannel } from '../outputChannel'
 
-export async function readPDF() {
+export async function readPDF(apiKey: string) {
   // Get the extension ID.
   const extensionID = 'sourcegraph.cody-ai'
 
@@ -30,11 +31,7 @@ export async function readPDF() {
         return
       }
 
-      outputChannel.appendLine(`ReadPDF: Gathering the PDF result for "${query}"`)
-
       const url = `https://r.jina.ai/${query}`
-
-      outputChannel.appendLine(`ReadPDF: Gathering the PDF result at "${url}"`)
 
       // Create a status bar item for the progress indicator
       const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -53,7 +50,9 @@ export async function readPDF() {
         method: 'GET',
         headers: {
           'X-With-Generated-Alt': 'true',
-          'X-With-Links-Summary': 'true'
+          'X-With-Links-Summary': 'true',
+          'X-No-Cache': 'true',
+          ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
         }
       }
 
@@ -64,7 +63,6 @@ export async function readPDF() {
 
         // Handle the response data
         response.on('data', chunk => {
-          outputChannel.appendLine('ReadPDF: Recieving chunk: ' + chunk)
           data += chunk
         })
 
@@ -82,6 +80,26 @@ export async function readPDF() {
           clearInterval(progressInterval)
           statusBarItem.hide()
           statusBarItem.dispose()
+
+          // Try to parse the data as JSON
+          try {
+            const jsonData = JSON.parse(data)
+
+            // Check if it's an error response
+            if (jsonData.code && jsonData.message) {
+              // Handle the error
+              const errorMessage = `Error ${jsonData.code}: ${jsonData.message}`
+              vscode.window.showErrorMessage(`Jina API: ${errorMessage}`)
+              outputChannel.appendLine(`Jina API: ${errorMessage}`)
+            } else {
+              // It's a valid JSON response, but not an error
+              // You might want to handle this case differently
+              displayPDFResultInMention(query, JSON.stringify(jsonData, null, 2))
+            }
+          } catch (e) {
+            // If it's not valid JSON, treat it as a regular string response
+            displayPDFResultInMention(query, data)
+          }
 
           // Display the results in a Cody AI mention
           displayPDFResultInMention(query, data)
@@ -105,8 +123,20 @@ export async function displayPDFResultInMention(query: string, PDF: string) {
   // Create the input prompt prefix for the mention
   const prefix = `Your goal is to provide a concise and specific answer based on the content of the provided PDF. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the result of the PDF:\n\n${PDF}`
 
-  // Truncate the prefix to 80000 characters or less
-  const truncatedWebResult = prefix.slice(0, 80000)
+  // Use the tiktoken library for counting the number of token in the 'prefix' string
+  const enc = get_encoding("cl100k_base")
+
+  // Reduce the 'prefix' string until the tokens are lesser than 28000 tokens.
+  let truncatedPDFResult = prefix;
+  while (true) {
+    const encoded = enc.encode(truncatedPDFResult)
+    if (encoded.length <= 28000) {
+      break
+    }
+    // Reduce by approximately 10% each iteration
+    const newLength = Math.floor(truncatedPDFResult.length * 0.9)
+    truncatedPDFResult = truncatedPDFResult.slice(0, newLength)
+  }
 
   try {
     // Get the workspace folders
@@ -135,11 +165,10 @@ export async function displayPDFResultInMention(query: string, PDF: string) {
       )
 
       // Write the truncated web result to the file
-      fs.writeFileSync(file.fsPath, Buffer.from(truncatedWebResult))
+      fs.writeFileSync(file.fsPath, Buffer.from(truncatedPDFResult))
 
       // Execute the command to mention the file
       await vscode.commands.executeCommand('cody.mention.file', file)
-      outputChannel.appendLine('ReadPDF: displayPDFResultInMention: PDF Mention created')
     }
   } catch (err: any) {
     // Log any errors that occur
