@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import * as https from 'https'
 import * as fs from 'fs'
-import { get_encoding } from "tiktoken"
+import { get_encoding } from 'tiktoken'
 import { outputChannel } from '../outputChannel'
 
 export async function readPDF(apiKey: string) {
@@ -124,10 +124,10 @@ export async function displayPDFResultInMention(query: string, PDF: string) {
   const prefix = `Your goal is to provide a concise and specific answer based on the content of the provided PDF. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the result of the PDF:\n\n${PDF}`
 
   // Use the tiktoken library for counting the number of token in the 'prefix' string
-  const enc = get_encoding("cl100k_base")
+  const enc = get_encoding('cl100k_base')
 
   // Reduce the 'prefix' string until the tokens are lesser than 28000 tokens.
-  let truncatedPDFResult = prefix;
+  let truncatedPDFResult = prefix
   while (true) {
     const encoded = enc.encode(truncatedPDFResult)
     if (encoded.length <= 28000) {

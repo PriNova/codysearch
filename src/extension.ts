@@ -57,7 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
           vscode.window.showInformationMessage('Jina AI API key updated successfully')
         }
       }
-    })
+    }),
     vscode.commands.registerCommand('cody-architect.createNodeEditorPanel', () =>
       createNodeEditorPanel(context)
     )
