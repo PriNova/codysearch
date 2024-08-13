@@ -1,5 +1,10 @@
 ## Change-Log:
 
+### Version 0.0.18 (2024-07-27)
+
+- Refactored web search and PDF reading functionality to use `fetch` API instead of `https` module
+- Switched from `tiktoken` to `js-tiktoken` for more efficient token encoding
+
 ### Version 0.0.17 (2024-07-26)
 
 - Implemented token-based truncation using tiktoken library for web search and PDF results
