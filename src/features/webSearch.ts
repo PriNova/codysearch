@@ -1,26 +1,25 @@
 import * as vscode from 'vscode'
-import * as https from 'https'
 import * as fs from 'fs'
-import { get_encoding } from "tiktoken"
+import { getEncoding } from 'js-tiktoken'
 import { outputChannel } from '../outputChannel'
 
 /**
- * Performs a web search using the Jina AI search engine and displays the results in a Cody AI mention.
+ * Performs a web search using the Jina AI search engine and displays the results in Cody AI mentions.
  *
- * This function prompts the user to enter a search query, then makes an HTTPS GET request to the Jina AI search engine with the encoded query. The response data is then passed to the `appendToChat` function, which creates a temporary file with the query and result, and opens the file in a Cody AI mention.
+ * This function enhances the IDE's capabilities by allowing users to perform web searches without
+ * leaving their development environment. It prompts for a search query and an optional URL to narrow
+ * results, then fetches and displays the information using Cody AI mentions for seamless integration.
  *
+ * @param apiKey - The API key for authenticating with the Jina AI search engine.
  * @returns {Promise<void>} A Promise that resolves when the search is complete or an error occurs.
  */
 export async function webSearch(apiKey: string): Promise<void> {
-  // Get the extension ID.
   const extensionID = 'sourcegraph.cody-ai'
-
-  // Get the extension.
   const extension = vscode.extensions.getExtension(extensionID)
 
-  // If the extension is not installed, return.
+  // Cody AI extension is required for displaying search results in mentions
   if (!extension) {
-    // Show a warning to the user that the extension is not active or installed
+    // Inform the user about the missing dependency to guide them towards resolving the issue
     vscode.window.showWarningMessage('Cody AI extension is not active or installed')
     outputChannel.appendLine('WebSearch: Cody AI extension is not active or installed')
     return
@@ -32,7 +31,7 @@ export async function webSearch(apiKey: string): Promise<void> {
     placeHolder: 'Type your search query here'
   })
 
-  // If the user cancels the input, return.
+  // Respect user's decision to abort the search operation
   if (!query) {
     return
   }
@@ -43,20 +42,20 @@ export async function webSearch(apiKey: string): Promise<void> {
     placeHolder: 'Type your URL here'
   })
 
-  outputChannel.appendLine(`WebSearch: Gathering the web result for "${query}"`)
-  // Encode the query
+  // Encode the query and URL for the API request
   const encodedQuery = encodeURIComponent(query)
   const encodedURLSite = encodeURIComponent(urlSite ? urlSite : '')
   const url = `https://s.jina.ai/${encodedQuery}?site=${encodedURLSite}`
 
   outputChannel.appendLine(`WebSearch: Gathering the web result at "${url}"`)
 
-  // Create a status bar item for the progress indicator
+  // Provide visual feedback to the user during potentially long-running web search operations
+  // This improves user experience by keeping them informed about the ongoing process
   const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
   statusBarItem.text = 'Gathering the web result... 0s'
   statusBarItem.show()
 
-  // Update the progress every second
+  // Provide real-time feedback to enhance user experience during potentially long-running operations
   let progress = 0
   const updateProgress = () => {
     progress += 1
@@ -64,87 +63,57 @@ export async function webSearch(apiKey: string): Promise<void> {
   }
   const progressInterval = setInterval(updateProgress, 1000)
 
-  // Set headers for Image Caption, gather links at the end of the response and narrow down the search results
+  // Configure request headers to enhance search results with additional features and ensure fresh data
   const headers = {
     'X-With-Generated-Alt': 'true',
     'X-With-Links-Summary': 'true',
     'X-No-Cache': 'true',
-    ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` }),
-    'Accept': 'application/json',
+    ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
   }
 
-  // Print the headers const in output channel
+  // Log request headers for debugging and transparency, aiding in troubleshooting API interactions
   outputChannel.appendLine('WebSearch: Request headers:')
   Object.entries(headers).forEach(([key, value]) => {
-    outputChannel.appendLine(`  ${key}: ${value}`)
+    if (key !== 'authorization') {
+      outputChannel.appendLine(`  ${key}: ${value}`)
+    }
   })
 
-  const options: https.RequestOptions = {
+  const options = {
     method: 'GET',
     headers,
-    timeout: 60000
+    timeout: 60000,
+    encodedQuery: 'utf8'
   }
 
-  // Make the HTTPS GET request
-  const clientRequest = https.get(url, options, response => {
-    let data = ''
-    response.setEncoding('utf8')
+  // Initiate the web search request and handle potential network or API errors
+  try {
+    const response: Response = await fetch(url, options)
+    const data = await response.text()
 
-    // Handle the response data
-    response.on('data', chunk => {
-      //outputChannel.appendLine('WebSearch: Recieving chunk: ' + chunk)
-      data += chunk
-    })
+    if (!data) {
+      // Handle the error
+      const errorMessage = `Error fetching result}`
+      vscode.window.showErrorMessage(errorMessage)
+      outputChannel.appendLine(errorMessage)
+    } else {
+      // Process the API response to prepare search results for display and logging
+      const results = data
+      outputChannel.appendLine(`WebSearch: Found results`)
 
-    response.on('error', (err: any) => {
-      // Clear the progress interval and hide the status bar item
-      outputChannel.appendLine('WebSearch: Error with code: ' + err)
-      clearInterval(progressInterval)
-      statusBarItem.hide()
-      statusBarItem.dispose()
-    })
-
-    // Handle the response end
-    response.on('end', () => {
-      // Clear the progress interval and hide the status bar item
+      // Clean up UI elements to maintain a clutter-free interface after search completion
       clearInterval(progressInterval)
       statusBarItem.hide()
       statusBarItem.dispose()
 
-      // Try to parse the data as JSON
-      try {
-        const jsonData = JSON.parse(data)
-
-        // Check if it's an error response
-        if (jsonData.code && jsonData.message) {
-          // Handle the error
-          const errorMessage = `Error ${jsonData.code}: ${jsonData.message}`
-          vscode.window.showErrorMessage(`Jina API: ${errorMessage}`)
-          outputChannel.appendLine(`Jina API: ${errorMessage}`)
-        } else {  // It's a valid JSON response, but not an error
-          
-          // Extract the results
-          const results = jsonData.data.map((result: any) => result.content)
-          //outputChannel.appendLine(`WebSearch: Found ${results} results`)
-          displaySearchResultsInMention(query, results)
-        }
-      } catch (e) {
-        // If it's not valid JSON, treat it as a regular string response
-        displaySearchResultsInMention(query, data)
-      }
-    })
-  })
-
-  clientRequest.on('error', () => {
-    // Clear the progress interval and hide the status bar item
+      await displaySearchResultsInMention(query, results)
+    }
+  } catch (error) {
     clearInterval(progressInterval)
     statusBarItem.hide()
     statusBarItem.dispose()
-
-    // Show an error message to the user
-    vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
-    outputChannel.appendLine('WebSearch: An error occurred while making the HTTP request.')
-  })
+    outputChannel.append('WebSearch: Error with code: ' + error)
+  }
 }
 
 /**
@@ -156,14 +125,14 @@ export async function webSearch(apiKey: string): Promise<void> {
 export async function displaySearchResultsInMention(query: string, message: string) {
   // Create the input prompt prefix for the mention
   const prefix = `Your goal is to provide the results based on the users query in a understandable and concise manner. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the users query: ${query}\n\nThese are the results of the query:\n\n${message}`
-  
+
   // Use the tiktoken library for counting the number of token in the 'prefix' string
-  const enc = get_encoding("cl100k_base")
+  const enc = getEncoding('cl100k_base')
 
   // Reduce the 'prefix' string until the tokens are lesser than 28000 tokens.
-  let truncatedWebResult = prefix;
+  let truncatedWebResult = prefix
   while (true) {
-    const encoded = enc.encode(truncatedWebResult)
+    const encoded = enc.encode(truncatedWebResult, 'all')
     if (encoded.length <= 28000) {
       break
     }
@@ -171,8 +140,10 @@ export async function displaySearchResultsInMention(query: string, message: stri
     const newLength = Math.floor(truncatedWebResult.length * 0.9)
     truncatedWebResult = truncatedWebResult.slice(0, newLength)
   }
-  
-  outputChannel.appendLine(`WebSearch: Truncated prefix to ${enc.encode(truncatedWebResult).length} tokens to avoid exceeding the mention limit`)
+
+  outputChannel.appendLine(
+    `WebSearch: Truncated prefix to ${enc.encode(truncatedWebResult, 'all').length} tokens to avoid exceeding the mention limit`
+  )
 
   try {
     // Get the workspace folders
@@ -211,16 +182,16 @@ export async function displaySearchResultsInMention(query: string, message: stri
 }
 
 function truncateToTokenLimit(text: string, tokenLimit: number): string {
-  const enc = new TextEncoder();
-  let currentText = text;
-  
+  const enc = new TextEncoder()
+  let currentText = text
+
   while (true) {
-    const encoded = enc.encode(currentText);
+    const encoded = enc.encode(currentText)
     if (encoded.length <= tokenLimit) {
-      return currentText;
+      return currentText
     }
     // Reduce by approximately 10% each iteration
-    const newLength = Math.floor(currentText.length * 0.9);
-    currentText = currentText.slice(0, newLength);
+    const newLength = Math.floor(currentText.length * 0.9)
+    currentText = currentText.slice(0, newLength)
   }
 }

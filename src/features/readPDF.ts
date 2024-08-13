@@ -1,122 +1,80 @@
 import * as vscode from 'vscode'
-import * as https from 'https'
 import * as fs from 'fs'
-import { get_encoding } from "tiktoken"
+import { getEncoding } from 'js-tiktoken'
 import { outputChannel } from '../outputChannel'
 
 export async function readPDF(apiKey: string) {
-  // Get the extension ID.
   const extensionID = 'sourcegraph.cody-ai'
-
-  // Get the extension.
   const extension = vscode.extensions.getExtension(extensionID)
 
-  // If the extension is not installed, return.
+  // Cody AI extension is required for displaying search results in mentions
   if (!extension) {
-    // Show a warning to the user that the extension is not active or installed
+    // Inform the user about the missing dependency to guide them towards resolving the issue
     vscode.window.showWarningMessage('Cody AI extension is not active or installed')
     outputChannel.appendLine('ReadPDF: Cody AI extension is not active or installed')
     return
   }
 
   // Prompt the user to input a url to a PDF
-  vscode.window
-    .showInputBox({
-      prompt: 'Enter the URL to a PDF',
-      placeHolder: 'Type the URL to a PDF here'
-    })
-    .then(query => {
-      // If the user cancels the input, return.
-      if (!query) {
-        return
-      }
+  const query = await vscode.window.showInputBox({
+    prompt: 'Enter the URL to a PDF',
+    placeHolder: 'Type the URL to a PDF here'
+  })
 
-      const url = `https://r.jina.ai/${query}`
+  // Respect user's decision to abort the search operation
+  if (!query) {
+    return
+  }
 
-      // Create a status bar item for the progress indicator
-      const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
-      statusBarItem.text = 'Gathering the PDF... 0s'
-      statusBarItem.show()
+  const url = `https://r.jina.ai/${query}`
 
-      // Update the progress every second
-      let progress = 0
-      const progressInterval = setInterval(() => {
-        progress += 1
-        statusBarItem.text = `Gathering the PDF... ${progress}s`
-      }, 1000)
+  // Provide visual feedback to the user during potentially long-running web search operations
+  // This improves user experience by keeping them informed about the ongoing process
+  const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
+  statusBarItem.text = 'Gathering the PDF... 0s'
+  statusBarItem.show()
 
-      // Set headers for Image Caption and gather links at the end of the response
-      const options: https.RequestOptions = {
-        method: 'GET',
-        headers: {
-          'X-With-Generated-Alt': 'true',
-          'X-With-Links-Summary': 'true',
-          'X-No-Cache': 'true',
-          ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
-        }
-      }
+  // Provide real-time feedback to enhance user experience during potentially long-running operations
+  let progress = 0
+  const updateProgress = () => {
+    progress += 1
+    statusBarItem.text = `Gathering the PDF result... ${progress}s`
+  }
+  const progressInterval = setInterval(updateProgress, 1000)
 
-      // Make the HTTPS GET request
-      const clientRequest = https.get(options && url, response => {
-        let data = ''
-        response.setEncoding('utf8')
+  // Configure request headers to enhance search results with additional features and ensure fresh data
+  const options = {
+    method: 'GET',
+    headers: {
+      'X-With-Generated-Alt': 'true',
+      'X-With-Links-Summary': 'true',
+      'X-No-Cache': 'true',
+      ...(apiKey?.trim() && { authorization: `Bearer ${apiKey}` })
+    }
+  }
 
-        // Handle the response data
-        response.on('data', chunk => {
-          data += chunk
-        })
+  // Initiate the PDF fetch request and handle potential network or API errors
+  try {
+    const response = await fetch(url, options)
+    const data = await response.text()
 
-        response.on('error', (err: any) => {
-          // Clear the progress interval and hide the status bar item
-          outputChannel.appendLine('ReadPDF: Error with code: ' + err)
-          clearInterval(progressInterval)
-          statusBarItem.hide()
-          statusBarItem.dispose()
-        })
-
-        // Handle the response end
-        response.on('end', () => {
-          // Clear the progress interval and hide the status bar item
-          clearInterval(progressInterval)
-          statusBarItem.hide()
-          statusBarItem.dispose()
-
-          // Try to parse the data as JSON
-          try {
-            const jsonData = JSON.parse(data)
-
-            // Check if it's an error response
-            if (jsonData.code && jsonData.message) {
-              // Handle the error
-              const errorMessage = `Error ${jsonData.code}: ${jsonData.message}`
-              vscode.window.showErrorMessage(`Jina API: ${errorMessage}`)
-              outputChannel.appendLine(`Jina API: ${errorMessage}`)
-            } else {
-              // It's a valid JSON response, but not an error
-              // You might want to handle this case differently
-              displayPDFResultInMention(query, JSON.stringify(jsonData, null, 2))
-            }
-          } catch (e) {
-            // If it's not valid JSON, treat it as a regular string response
-            displayPDFResultInMention(query, data)
-          }
-
-          // Display the results in a Cody AI mention
-          displayPDFResultInMention(query, data)
-        })
-      })
-
-      clientRequest.on('error', () => {
-        // Clear the progress interval and hide the status bar item
-        clearInterval(progressInterval)
-        statusBarItem.hide()
-        statusBarItem.dispose()
-
-        // Show an error message to the user
-        vscode.window.showErrorMessage('An error occurred while making the HTTP request.')
-        outputChannel.appendLine('ReadPDF: An error occurred while making the HTTP request.')
-      })
-    })
+    //response.setEncoding('utf8')
+    if (!data) {
+      // Handle the error
+      const errorMessage = `Error fetching result}`
+      vscode.window.showErrorMessage(errorMessage)
+      outputChannel.appendLine(errorMessage)
+    } else {
+      // Process the API response to prepare PDF fetch results for display and logging
+      outputChannel.appendLine(`readPDF: PDF fetched`)
+      displayPDFResultInMention(query, data)
+    }
+  } catch (error) {
+    // Clear the progress interval and hide the status bar item
+    clearInterval(progressInterval)
+    statusBarItem.hide()
+    statusBarItem.dispose()
+  }
 }
 
 export async function displayPDFResultInMention(query: string, PDF: string) {
@@ -124,12 +82,12 @@ export async function displayPDFResultInMention(query: string, PDF: string) {
   const prefix = `Your goal is to provide a concise and specific answer based on the content of the provided PDF. Do not make up content or code not included in the results. It is essential sticking to the results. !!Strictly append the URL Source as citations to the summary as ground truth!!\n\nThis is the result of the PDF:\n\n${PDF}`
 
   // Use the tiktoken library for counting the number of token in the 'prefix' string
-  const enc = get_encoding("cl100k_base")
+  const enc = getEncoding('cl100k_base')
 
   // Reduce the 'prefix' string until the tokens are lesser than 28000 tokens.
-  let truncatedPDFResult = prefix;
+  let truncatedPDFResult = prefix
   while (true) {
-    const encoded = enc.encode(truncatedPDFResult)
+    const encoded = enc.encode(truncatedPDFResult, 'all')
     if (encoded.length <= 28000) {
       break
     }
