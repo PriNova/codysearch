@@ -64,9 +64,15 @@ export async function readPDF(apiKey: string) {
       const errorMessage = `Error fetching result}`
       vscode.window.showErrorMessage(errorMessage)
       outputChannel.appendLine(errorMessage)
+      clearInterval(progressInterval)
+      statusBarItem.hide()
+      statusBarItem.dispose()
     } else {
       // Process the API response to prepare PDF fetch results for display and logging
       outputChannel.appendLine(`readPDF: PDF fetched`)
+      clearInterval(progressInterval)
+      statusBarItem.hide()
+      statusBarItem.dispose()
       displayPDFResultInMention(query, data)
     }
   } catch (error) {
@@ -86,6 +92,9 @@ export async function displayPDFResultInMention(query: string, PDF: string) {
 
   // Reduce the 'prefix' string until the tokens are lesser than 28000 tokens.
   let truncatedPDFResult = prefix
+  outputChannel.appendLine(`readPDF: PDF tokens ${enc.encode(truncatedPDFResult, 'all').length}`)
+
+  /*
   while (true) {
     const encoded = enc.encode(truncatedPDFResult, 'all')
     if (encoded.length <= 28000) {
@@ -95,6 +104,7 @@ export async function displayPDFResultInMention(query: string, PDF: string) {
     const newLength = Math.floor(truncatedPDFResult.length * 0.9)
     truncatedPDFResult = truncatedPDFResult.slice(0, newLength)
   }
+  */
 
   try {
     // Get the workspace folders
