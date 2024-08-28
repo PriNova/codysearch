@@ -96,6 +96,11 @@ export async function webSearch(apiKey: string): Promise<void> {
       const errorMessage = `Error fetching result}`
       vscode.window.showErrorMessage(errorMessage)
       outputChannel.appendLine(errorMessage)
+
+      // Clean up UI elements to maintain a clutter-free interface after search completion
+      clearInterval(progressInterval)
+      statusBarItem.hide()
+      statusBarItem.dispose()
     } else {
       // Process the API response to prepare search results for display and logging
       const results = data

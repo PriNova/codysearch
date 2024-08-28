@@ -64,12 +64,16 @@ export async function readPDF(apiKey: string) {
       const errorMessage = `Error fetching result}`
       vscode.window.showErrorMessage(errorMessage)
       outputChannel.appendLine(errorMessage)
+
+      // Clean up UI elements to maintain a clutter-free interface after search completion
       clearInterval(progressInterval)
       statusBarItem.hide()
       statusBarItem.dispose()
     } else {
       // Process the API response to prepare PDF fetch results for display and logging
       outputChannel.appendLine(`readPDF: PDF fetched`)
+
+      // Clean up UI elements to maintain a clutter-free interface after search completion
       clearInterval(progressInterval)
       statusBarItem.hide()
       statusBarItem.dispose()

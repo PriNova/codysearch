@@ -1,5 +1,11 @@
 ## Change-Log:
 
+### Version 0.0.19 (2024-08-28)
+
+- Improved UI cleanup after search operations in readPDF and webSearch features
+- Enhanced error handling with consistent UI element disposal
+- Ensured a cleaner user interface by properly managing progress indicators and status bar items
+
 ### Version 0.0.18 (2024-07-27)
 
 - Refactored web search and PDF reading functionality to use `fetch` API instead of `https` module
