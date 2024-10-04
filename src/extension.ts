@@ -3,15 +3,25 @@ import { webSearch } from './features/webSearch'
 import { readPDF } from './features/readPDF'
 import { outputChannel } from './outputChannel'
 import { startServer, stopServer } from './features/server'
+import { selectExternalFile } from './features/externalFileMention'
 
 /**
- * Activates the extension and registers a command to perform a web search.
+ * Activates the extension and registers commands for various features.
  *
- * This function is called when the extension is activated. It registers a command that can be used to perform a web search.
+ * This function is called when the extension is activated. It registers the following commands:
+ * - Select external file
+ * - Perform web search
+ * - Read PDF
+ * - Set Jina AI API key
+ *
+ * It also initializes the output channel for logging extension activities.
  *
  * @param context - The extension context, which provides access to various extension-related resources.
  */
 export async function activate(context: vscode.ExtensionContext) {
+  context.subscriptions.push(
+    vscode.commands.registerCommand('cody-architect.selectExternalFile', selectExternalFile)
+  )
   //const config = vscode.workspace.getConfiguration('codyArchitect')
   function getCurrentApiKey(): string {
     return vscode.workspace.getConfiguration('codyArchitect').get('jinaApiKey') as string

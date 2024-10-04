@@ -65,6 +65,20 @@ Once set, Cody Architect will use your personal API key for web searches and PDF
 
 #### Note: If the query does result into an error, try again. Utilize natural language to fine-tune your search query.
 
+## New Features (2024-10-04):
+
+### External File Mention:
+
+1. Open a Cody chat window
+2. Press Ctrl+Shift+P (Windows/Linux) or Cmd+Shift+P (Mac) to bring up the Command Palette
+3. Search for "Cody Architect: Select External File for Mention"
+4. A file selection dialog will appear. Choose the file you want to mention.
+5. If the selected file is outside your workspace, it will be temporarily copied into the workspace.
+6. The selected file will be mentioned in the Cody chat, allowing you to reference external files easily.
+
+Note: Temporary files created for external file mentions are automatically cleaned up after use.
+
+This feature allows you to easily reference and discuss files that are not part of your current workspace, enhancing collaboration and code review processes.
 
 ### Read PDFs:
 

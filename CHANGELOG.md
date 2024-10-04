@@ -1,11 +1,21 @@
 ## Change-Log:
 
+### Version 0.0.20 (2024-10-04)
+
+- Added new feature: External File Mention
+  - Users can now select external files for mention in Cody chat
+  - Files outside the workspace are temporarily copied into the workspace
+  - Automatic cleanup of temporary files after use
+- Improved UI cleanup after search operations in readPDF and webSearch features
+- Enhanced error handling with consistent UI element disposal
+- Ensured a cleaner user interface by properly managing progress indicators and status bar items
+- Refactored readPDF functionality to improve resource management and logging
+
 ### Version 0.0.19 (2024-08-28)
 
 - Improved UI cleanup after search operations in readPDF and webSearch features
 - Enhanced error handling with consistent UI element disposal
 - Ensured a cleaner user interface by properly managing progress indicators and status bar items
-
 ### Version 0.0.18 (2024-07-27)
 
 - Refactored web search and PDF reading functionality to use `fetch` API instead of `https` module

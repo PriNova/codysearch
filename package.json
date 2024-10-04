@@ -10,7 +10,7 @@
         "type": "git",
         "url": "https://github.com/PriNova/codysearch"
     },
-    "version": "0.0.19",
+    "version": "0.0.20",
     "engines": {
         "vscode": "^1.90.0"
     },
@@ -53,6 +53,10 @@
             {
                 "command": "cody-architect.setJinaApiKey",
                 "title": "Cody-Architect: Set Jina AI API Key"
+            },
+            {
+                "command": "cody-architect.selectExternalFile",
+                "title": "Cody-Architect: Select External File for Mention"
             }
         ]
     },
